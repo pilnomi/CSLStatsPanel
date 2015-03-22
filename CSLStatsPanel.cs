@@ -41,8 +41,8 @@ namespace CSLStatsPanel
             public bool init()
             {
                 if (m_initialized == true) return true;
-                m_initialized = true;
                 StatusWindowInterface.init();
+                m_initialized = true;
                 return true;
             }
 
@@ -61,9 +61,7 @@ namespace CSLStatsPanel
             //called about ~60 times per second. (or max frame rate user is getting atm imagine)
             public override void OnUpdate(float realTimeDelta, float simulationTimeDelta)
             {
-                //update about once every 3 seconds at 60fps. Definately gotta be a better way to do this just a sample.
-                //but the point is don't call your update code on every single frame\tick unless
-                //you truely have a need for that.
+                //update about once every 3 seconds at 60fps. 
                 numberofcalls++;
                 if (numberofcalls < 60 * 3) return;
                 numberofcalls = 0;
@@ -71,7 +69,7 @@ namespace CSLStatsPanel
                 {
                     StatusWindowInterface.updateText();
                 }
-                else
+                else if (man.loading.loadingComplete)
                 {
                     init();  //were we not able to init previously? if so try now.
                     if (m_initialized) StatusWindowInterface.updateText(); ;
@@ -122,7 +120,6 @@ namespace CSLStatsPanel
                 try
                 {
                     StatisticsManager sm = Singleton<StatisticsManager>.instance;
-                    while (sm.IsInvoking()) System.Threading.Thread.Sleep(1);
                     StatisticBase sb = sm.Get(st);
                     if (sb != null)
                     {
