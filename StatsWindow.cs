@@ -62,13 +62,21 @@ namespace CSLStatsPanel
     {
         CLSStatusWindowPanel myStatsWindowPanel;
         UIResizeHandle myresizepanel;
+        UIPanel headerpanel;
+        UILabel resizelabel, headertext;
+        bool firstrun = true;
+        bool dragging = false, resizing = false;
+        public SavedFloat
+            windowx = new SavedFloat("ModCSLStatsPanelWindowPosX", Settings.gameSettingsFile, 0, true),
+            windowy = new SavedFloat("ModCSLStatsPanelWindowPosY", Settings.gameSettingsFile, 0, true),
+            windoww = new SavedFloat("ModCSLStatsPanelWindowPosW", Settings.gameSettingsFile, 700, true),
+            windowh = new SavedFloat("ModCSLStatsPanelWindowPosH", Settings.gameSettingsFile, 400, true);
 
         public CLSStatsMasterWindow()
         {
             init();
         }
-        UIPanel headerpanel;
-        UILabel resizelabel, headertext;
+
         public void init()
         {
             this.color = new Color32(0, 0, 255, 200);
@@ -114,12 +122,6 @@ namespace CSLStatsPanel
 
         public void updateText(List<string> s) { myStatsWindowPanel.updateText(s);}
 
-        public static SavedFloat
-            windowx = new SavedFloat("ModCSLStatsPanelWindowPosX", Settings.gameSettingsFile, 0, true),
-            windowy = new SavedFloat("ModCSLStatsPanelWindowPosY", Settings.gameSettingsFile, 0, true),
-            windoww = new SavedFloat("ModCSLStatsPanelWindowPosW", Settings.gameSettingsFile, 700, true),
-            windowh = new SavedFloat("ModCSLStatsPanelWindowPosH", Settings.gameSettingsFile, 400, true);
-            
         protected override void OnSizeChanged()
         {
             
@@ -143,7 +145,6 @@ namespace CSLStatsPanel
 
         }
 
-        bool firstrun = true;
         public void getstats2()
         {
             myStatsWindowPanel.getstats2();
@@ -154,8 +155,6 @@ namespace CSLStatsPanel
             }
             firstrun = false;
         }
-
-        bool dragging = false, resizing = false;
 
         bool checkresizebox(UIMouseEventParameter p)
         {
@@ -222,6 +221,9 @@ namespace CSLStatsPanel
         public int mycount = 0;
         public bool m_issubpanel = false;
         public List<string> m_stringbuilder = new List<string>();
+        public Dictionary<string, CLSStatusWindowSubPanel> m_categories = new Dictionary<string, CLSStatusWindowSubPanel>();
+        public List<CSLStatsPanelLabel> m_textfields = new List<CSLStatsPanelLabel>();
+        bool firstrun = true;
 
         public CLSStatusWindowPanel()
         {
@@ -233,6 +235,7 @@ namespace CSLStatsPanel
 
             m_textfields = new List<CSLStatsPanelLabel>();
         }
+
         public void init()
         {
             if (initialized) return;
@@ -253,9 +256,6 @@ namespace CSLStatsPanel
             init();
         }
 
-
-        public Dictionary<string, CLSStatusWindowSubPanel> m_categories = new Dictionary<string, CLSStatusWindowSubPanel>();
-        public List<CSLStatsPanelLabel> m_textfields = new List<CSLStatsPanelLabel>();
         public void updateText(List<StatisticsClassWrapper> TextFields)
         {
             statlog.log("update text scw initialized=" + initialized.ToString() + " running=" + running.ToString());
@@ -305,7 +305,6 @@ namespace CSLStatsPanel
             running = false;
         }
 
-        bool firstrun = true;
         public void updateText(List<string> TextFields)
         {
             statlog.log("update text initialized=" + initialized.ToString() + " running=" + running.ToString());
