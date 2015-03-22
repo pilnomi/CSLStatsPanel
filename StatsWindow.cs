@@ -14,7 +14,7 @@ namespace CSLStatsPanel
     {
         public static bool initialized = false;
         //public static UIView uiView;
-        public static CLSStatsMasterWindow myStatsWindowPanel;
+        public static CSLStatsMasterWindow myStatsWindowPanel;
         public static bool running = false;
 
         public static void init()
@@ -26,7 +26,7 @@ namespace CSLStatsPanel
             UIView uiView = GameObject.FindObjectOfType<UIView>();
             if (uiView == null) return;
 
-            myStatsWindowPanel = (CLSStatsMasterWindow)UIView.GetAView().AddUIComponent(typeof(CLSStatsMasterWindow));
+            myStatsWindowPanel = (CSLStatsMasterWindow)UIView.GetAView().AddUIComponent(typeof(CSLStatsMasterWindow));
             myStatsWindowPanel.name = "CSLStatsMasterPanel";
 
             initialized = true;
@@ -58,9 +58,9 @@ namespace CSLStatsPanel
         }
     }
 
-    public class CLSStatsMasterWindow : UIPanel
+    public class CSLStatsMasterWindow : UIPanel
     {
-        CLSStatusWindowPanel myStatsWindowPanel;
+        CSLStatusWindowPanel myStatsWindowPanel;
         UIResizeHandle myresizepanel;
         UIPanel headerpanel;
         UILabel resizelabel, headertext;
@@ -72,7 +72,7 @@ namespace CSLStatsPanel
             windoww = new SavedFloat("ModCSLStatsPanelWindowPosW", Settings.gameSettingsFile, 700, true),
             windowh = new SavedFloat("ModCSLStatsPanelWindowPosH", Settings.gameSettingsFile, 400, true);
 
-        public CLSStatsMasterWindow()
+        public CSLStatsMasterWindow()
         {
             init();
         }
@@ -95,7 +95,7 @@ namespace CSLStatsPanel
             headertext.text = "CSL Stats Panel";
             headertext.CenterToParent();
 
-            myStatsWindowPanel = (CLSStatusWindowPanel)this.AddUIComponent(typeof(CLSStatusWindowPanel));
+            myStatsWindowPanel = (CSLStatusWindowPanel)this.AddUIComponent(typeof(CSLStatusWindowPanel));
             myStatsWindowPanel.name = "CSLStatsPanel";
             myStatsWindowPanel.color = new Color32(0, 0, 255, 200);
             myresizepanel = (UIResizeHandle)this.AddUIComponent(typeof(UIResizeHandle));
@@ -195,9 +195,9 @@ namespace CSLStatsPanel
         }
     }
 
-    public class CLSStatusWindowSubPanel : CLSStatusWindowPanel
+    public class CSLStatusWindowSubPanel : CSLStatusWindowPanel
     {
-        public CLSStatusWindowSubPanel()
+        public CSLStatusWindowSubPanel()
         {
             m_issubpanel = true;
             base.m_issubpanel = true;
@@ -215,17 +215,17 @@ namespace CSLStatsPanel
         }
     }
 
-    public class CLSStatusWindowPanel : UIScrollablePanel
+    public class CSLStatusWindowPanel : UIScrollablePanel
     {
         public bool initialized = false, running = false;
         public int mycount = 0;
         public bool m_issubpanel = false;
         public List<string> m_stringbuilder = new List<string>();
-        public Dictionary<string, CLSStatusWindowSubPanel> m_categories = new Dictionary<string, CLSStatusWindowSubPanel>();
+        public Dictionary<string, CSLStatusWindowSubPanel> m_categories = new Dictionary<string, CSLStatusWindowSubPanel>();
         public List<CSLStatsPanelLabel> m_textfields = new List<CSLStatsPanelLabel>();
         bool firstrun = true;
 
-        public CLSStatusWindowPanel()
+        public CSLStatusWindowPanel()
         {
             this.backgroundSprite = "GenericPanel";
             this.autoLayoutDirection = LayoutDirection.Vertical;
@@ -264,7 +264,7 @@ namespace CSLStatsPanel
             running = true;
 
             statlog.log("reseting stringbuilders");
-            foreach (KeyValuePair<string, CLSStatusWindowSubPanel> p in m_categories)
+            foreach (KeyValuePair<string, CSLStatusWindowSubPanel> p in m_categories)
                 p.Value.m_stringbuilder = new List<string>();
 
             statlog.log("looping stats");
@@ -276,7 +276,7 @@ namespace CSLStatsPanel
                 if (!m_categories.Keys.Contains(currentcat))
                 {
                     statlog.log("adding category " + currentcat);
-                    m_categories.Add(currentcat, (CLSStatusWindowSubPanel)this.AddUIComponent(typeof(CLSStatusWindowSubPanel)));
+                    m_categories.Add(currentcat, (CSLStatusWindowSubPanel)this.AddUIComponent(typeof(CSLStatusWindowSubPanel)));
                 }
 
                 if (m_categories[currentcat].m_stringbuilder.Count()==0)
@@ -285,7 +285,7 @@ namespace CSLStatsPanel
                 m_categories[currentcat].m_stringbuilder.Add(TextFields[i].statstring);
             }
 
-            foreach (KeyValuePair<string, CLSStatusWindowSubPanel> p in m_categories)
+            foreach (KeyValuePair<string, CSLStatusWindowSubPanel> p in m_categories)
             {
                 statlog.log("calling updatetext on subpanel " + p.Key);
                 p.Value.updateText(p.Value.m_stringbuilder);
@@ -344,7 +344,7 @@ namespace CSLStatsPanel
             running = false;
         }
 
-        ~CLSStatusWindowPanel()
+        ~CSLStatusWindowPanel()
         {
 
             m_textfields = new List<CSLStatsPanelLabel>();
