@@ -100,6 +100,16 @@ namespace CSLStatsPanel
                 m_scaledesc = scaledescription;
                 statstring = getstatstring(m_desc, m_st, m_multiplier, m_scale, m_scaledesc, precision);
             }
+            public StatisticsClassWrapper(string category, string description, ImmaterialResourceManager.Resource st, decimal scale, decimal multiplier, string scaledescription, int precision = 2)
+            {
+                this.category = category;
+                //m_st = st;
+                m_desc = description;
+                m_scale = scale;
+                m_multiplier = multiplier;
+                m_scaledesc = scaledescription;
+                statstring = getstatstring(m_desc, st, m_multiplier, m_scale, m_scaledesc, precision);
+            }
             public StatisticsClassWrapper(string category, string description)
             {
                 this.category = category;
@@ -111,6 +121,33 @@ namespace CSLStatsPanel
                 m_desc = description;
                 statstring = description + ": " + Math.Round(value, precision).ToString() + suffix;
 
+            }
+
+            string getstatstring(string desc, ImmaterialResourceManager.Resource st,
+    decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int precision = 2)
+            {
+                //statlog.log(st);
+                try
+                {
+                    ImmaterialResourceManager im = Singleton<ImmaterialResourceManager>.instance;
+                    int outint=0;
+                    float total=0f;
+
+                    im.CheckTotalResource(st, out outint);
+                    total = outint;
+                    string strtotal = total.ToString();
+                    if (total > (float)scale)
+                    {
+                        total /= (float)scale;
+                        strtotal = Math.Round(total, precision).ToString() + scalestring;
+
+                    }
+                    return desc + ": " + strtotal + " ";
+                }
+                catch
+                {
+                    return desc + ": -1 ";
+                }
             }
 
             string getstatstring(string desc, StatisticType st,
@@ -156,7 +193,7 @@ namespace CSLStatsPanel
             public static void log(string logtext)
             {
                 if (!enablelogging) return;
-                
+                /*
                 System.IO.StreamWriter wr;
                 if (System.IO.File.Exists("cslstatslog.txt") && !keeponlylastmessage)
                 {
@@ -165,7 +202,8 @@ namespace CSLStatsPanel
                 else wr = System.IO.File.CreateText("cslstatslog.txt");
                 wr.WriteLine(logtext);
                 wr.Close();
-                
+                */
+                //ModTools.Log.Message(logtext);
             }
         }
 }

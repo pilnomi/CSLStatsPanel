@@ -106,7 +106,7 @@ namespace CSLStatsPanel
             //myresizepanel.anchor = UIAnchorStyle.Bottom;
             //myresizepanel.anchor = UIAnchorStyle.Right;
             resizelabel = myresizepanel.AddUIComponent<UILabel>();
-
+                        
             setdefaultpos();
         }
 
@@ -155,7 +155,7 @@ namespace CSLStatsPanel
             }
             firstrun = false;
         }
-
+        
         bool checkresizebox(UIMouseEventParameter p)
         {
             
@@ -239,7 +239,7 @@ namespace CSLStatsPanel
         public void init()
         {
             if (initialized) return;
-            statlog.log("CLSStatusWindowPanel init - subpanel=" + m_issubpanel.ToString());
+            statlog.log("CSLStatusWindowPanel init - subpanel=" + m_issubpanel.ToString());
             if (!this.m_issubpanel)
             {
                 this.freeScroll = true;
@@ -362,27 +362,18 @@ namespace CSLStatsPanel
 
             mystrings.Add("CSL Stats Panel " + DateTime.Now.ToString("MM/dd/yy H:mm:ss"));
 
-            NetManager nm = Singleton<NetManager>.instance;
-            int firecoverage = 0; 
-            for (int i = 0; i < nm.m_segments.m_buffer.Count(); i++)
-            {
-                if (!nm.m_segments.m_buffer[i].m_flags.IsFlagSet(NetSegment.Flags.Created)) continue;
-                firecoverage += nm.m_segments.m_buffer[i].m_fireCoverage;
-                
-            }
-            
             BuildingManager bm = Singleton<BuildingManager>.instance;
-            int electricbuffer = 0, onfire=0,firehazard=0, crimebuffer=0, garbagebuffer=0;
+            int onfire=0,firehazard=0, buildingcount=0;
             for (int i = 0; i < bm.m_buildings.m_buffer.Count(); i++)
             {
-                if (!bm.m_buildings.m_buffer[i].m_flags.IsFlagSet(Building.Flags.Active)) continue;
                 if (!bm.m_buildings.m_buffer[i].m_flags.IsFlagSet(Building.Flags.Created)) continue;
-
-                electricbuffer += bm.m_buildings.m_buffer[i].m_electricityBuffer;
+                if (bm.m_buildings.m_buffer[i].m_flags.IsFlagSet(Building.Flags.Original)) continue;
+                if (bm.m_buildings.m_buffer[i].m_flags.IsFlagSet(Building.Flags.None)) continue;
+                if (bm.m_buildings.m_buffer[i].m_flags.IsFlagSet(Building.Flags.Untouchable)) continue;
+                
+                buildingcount++;
                 if (bm.m_buildings.m_buffer[i].m_fireIntensity > 0) onfire++;
-                firehazard += (int)bm.m_buildings.m_buffer[i].m_fireHazard;
-                crimebuffer += bm.m_buildings.m_buffer[i].m_crimeBuffer;
-                garbagebuffer += bm.m_buildings.m_buffer[i].m_garbageBuffer;
+                
             }
             double waterbuffer = 0, sewagebuffer = 0, watercapacity = 0, sewagecapacity = 0,
                 garbage=0;
@@ -392,7 +383,7 @@ namespace CSLStatsPanel
             DistrictManager dm = Singleton<DistrictManager>.instance;
             int dmcount = 0;
             int dmusage = 0, dmproduction = 0;
-            int finalcrimerate = 0, citizencount=0;
+            int finalcrimerate = 0, citizencount=0, sickcount=0, groundpollution=0;
             for (int i = 0; i < 1; i++)
             {
                 //if (!dm.m_districts.m_buffer[i].m_flags.IsFlagSet(District.Flags.Created)) continue;
@@ -404,7 +395,7 @@ namespace CSLStatsPanel
                     + dm.m_districts.m_buffer[i].m_youngData.m_finalCount
                     + dm.m_districts.m_buffer[i].m_teenData.m_finalCount
                     + dm.m_districts.m_buffer[i].m_seniorData.m_finalCount);
-                    
+                    groundpollution += dm.m_districts.m_buffer[i].GetGroundPollution();
                     dmcount++;
                     citizencount += localcitizencount;
                     dmusage += dm.m_districts.m_buffer[i].GetElectricityConsumption();
@@ -414,6 +405,7 @@ namespace CSLStatsPanel
                     sewagecapacity += dm.m_districts.m_buffer[i].GetSewageCapacity();
                     watercapacity += dm.m_districts.m_buffer[i].GetWaterCapacity();
                     garbage += dm.m_districts.m_buffer[i].GetGarbageAccumulation();
+                    sickcount += dm.m_districts.m_buffer[i].GetSickCount();
                     finalcrimerate += (int)dm.m_districts.m_buffer[i].m_finalCrimeRate;
             }
 
@@ -434,20 +426,33 @@ namespace CSLStatsPanel
             statstopull.Add(new StatisticsClassWrapper("Garbage", "Piles", StatisticType.GarbagePiles, 1000, 1, "M")); ;
             //statstopull.Add(new StatisticsClassWrapper("Garbage", "...buffer", garbagebuffer));
 
-            statstopull.Add(new StatisticsClassWrapper("Health Services", "Health", StatisticType.CitizenHealth, 1, 1, ""));
+            statstopull.Add(new StatisticsClassWrapper("Health Services", "Health", ImmaterialResourceManager.Resource.Health, 1, 1, "%"));
+            statstopull.Add(new StatisticsClassWrapper("Health Services", "Well Being", ImmaterialResourceManager.Resource.Wellbeing, 1, 1, "%"));
+            statstopull.Add(new StatisticsClassWrapper("Health Services", "Sick", sickcount));
             statstopull.Add(new StatisticsClassWrapper("Health Services", "Capacity", StatisticType.HealCapacity, 1, 1, ""));
             
             statstopull.Add(new StatisticsClassWrapper("Death Services", "Amount", StatisticType.DeadAmount, 1, 1, ""));
             statstopull.Add(new StatisticsClassWrapper("Death Services", "Capacity", StatisticType.DeadCapacity, 1, 1, ""));
             statstopull.Add(new StatisticsClassWrapper("Death Services", "Cremate Capacity", StatisticType.CremateCapacity, 1000, 1, "K"));
 
-            statstopull.Add(new StatisticsClassWrapper("Buildings", "Count", bm.m_buildingCount, 2, ""));
-            //statstopull.Add(new StatisticsClassWrapper("Buildings", "Districts", dmcount, 2, ""));
-            statstopull.Add(new StatisticsClassWrapper("Fire", "Buildings Burning", onfire, 2, ""));
-            statstopull.Add(new StatisticsClassWrapper("Fire", "Coverage", firecoverage, 2, ""));
-            statstopull.Add(new StatisticsClassWrapper("Fire", "Hazard", firehazard, 2, ""));
+            statstopull.Add(new StatisticsClassWrapper("Buildings", "Count", buildingcount, 2, ""));
             statstopull.Add(new StatisticsClassWrapper("Buildings", "Abandoned", StatisticType.AbandonedBuildings, 1, 1, ""));
+            
+            statstopull.Add(new StatisticsClassWrapper("Fire", "Buildings Burning", onfire, 2, ""));
+            statstopull.Add(new StatisticsClassWrapper("Fire", "Hazard", ImmaterialResourceManager.Resource.FireHazard, 1, 1, "%"));
+            
+            //statstopull.Add(new StatisticsClassWrapper("Health Services", "Heath Care", ImmaterialResourceManager.Resource.HealthCare, 1, 1, "%"));
+            //statstopull.Add(new StatisticsClassWrapper("Health Services", "Health", ImmaterialResourceManager.Resource.Health, 1, 1, "%"));
 
+            statstopull.Add(new StatisticsClassWrapper("Misc", "Entertainment", ImmaterialResourceManager.Resource.Entertainment, 1, 1, "%"));
+            statstopull.Add(new StatisticsClassWrapper("Misc", "Attractiveness", ImmaterialResourceManager.Resource.Attractiveness, 1, 1, ""));
+            statstopull.Add(new StatisticsClassWrapper("Misc", "Cargo Transport", ImmaterialResourceManager.Resource.CargoTransport, 1, 1, ""));
+            //statstopull.Add(new StatisticsClassWrapper("Misc", "Coverage?", ImmaterialResourceManager.Resource.Coverage, 1, 1, ""));
+            statstopull.Add(new StatisticsClassWrapper("Misc", "Density", ImmaterialResourceManager.Resource.Density, 1, 1, ""));
+            statstopull.Add(new StatisticsClassWrapper("Misc", "Land Value", ImmaterialResourceManager.Resource.LandValue, 1, 1, "₡/m²"));
+            statstopull.Add(new StatisticsClassWrapper("Misc", "ImmaterialResource", StatisticType.ImmaterialResource, 1000, 1, "M"));
+            statstopull.Add(new StatisticsClassWrapper("Misc", "Goods Produced", StatisticType.GoodsProduced, 1000, 1, "K"));
+            
             statstopull.Add(new StatisticsClassWrapper("Citizens", "Count", citizencount, 2, ""));
             statstopull.Add(new StatisticsClassWrapper("Citizens", "Move Rate", StatisticType.MoveRate, 1, 1, ""));
             statstopull.Add(new StatisticsClassWrapper("Citizens", "Birth Rate", StatisticType.BirthRate, 1, 1, ""));
@@ -465,9 +470,12 @@ namespace CSLStatsPanel
             statstopull.Add(new StatisticsClassWrapper("Tourists", "Visits", StatisticType.TouristVisits, 1, 1, ""));
             statstopull.Add(new StatisticsClassWrapper("Tourists", "Incoming", StatisticType.IncomingTourists, 1, 1, ""));
             statstopull.Add(new StatisticsClassWrapper("Public Transit", "Avg Passengers", StatisticType.AveragePassengers, 1, 1, ""));
-
-            statstopull.Add(new StatisticsClassWrapper("Misc", "ImmaterialResource", StatisticType.ImmaterialResource, 1000, 1, "M"));
-            statstopull.Add(new StatisticsClassWrapper("Misc", "Goods Produced", StatisticType.GoodsProduced, 1000, 1, "K"));
+            statstopull.Add(new StatisticsClassWrapper("Public Transit", "PublicTransport", ImmaterialResourceManager.Resource.PublicTransport, 1, 1, "%"));
+            
+            statstopull.Add(new StatisticsClassWrapper("Pollution", "Noise", ImmaterialResourceManager.Resource.NoisePollution, 1, 1, "%"));
+            statstopull.Add(new StatisticsClassWrapper("Pollution", "Ground", groundpollution,2, "%"));
+            
+            
             
             //int buildingcount = buildManager.m_buildingCount;
             //mystrings.Add("build count: " + buildingcount);
