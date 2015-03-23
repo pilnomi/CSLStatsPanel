@@ -71,6 +71,9 @@ namespace CSLStatsPanel
             windowy = new SavedFloat("ModCSLStatsPanelWindowPosY", Settings.gameSettingsFile, 0, true),
             windoww = new SavedFloat("ModCSLStatsPanelWindowPosW", Settings.gameSettingsFile, 700, true),
             windowh = new SavedFloat("ModCSLStatsPanelWindowPosH", Settings.gameSettingsFile, 400, true);
+        SavedInt fontchange = new SavedInt("CSLStatsPanelTextScaleDelta", Settings.gameSettingsFile, 0, true);
+        int minfontsize = -15, maxfontsize = 20;
+        float fontincr = .05f;
 
         public CSLStatsMasterWindow()
         {
@@ -117,6 +120,17 @@ namespace CSLStatsPanel
             this.height = windowh.value;
             if (this.width == 0) this.width = 700;
             if (this.height == 0) this.height = 400;
+
+            if (fontchange.value < minfontsize) fontchange.value = minfontsize;
+            if (fontchange.value > maxfontsize) fontchange.value = maxfontsize;
+            foreach (KeyValuePair<string, CSLStatusWindowSubPanel> subpanel in myStatsWindowPanel.m_categories)
+            {
+                foreach (CSLStatsPanelLabel l in subpanel.Value.m_textfields)
+                {
+                    l.textScale += fontincr * fontchange.value;
+                }
+                subpanel.Value.FitToContents();
+            }
             OnSizeChanged();
         }
 
@@ -174,6 +188,64 @@ namespace CSLStatsPanel
         {
             dragging = false; resizing = false;
         }
+
+
+        bool childrenareclipped
+        {
+            get
+            {
+                foreach (KeyValuePair<string, CSLStatusWindowSubPanel> subpanel in myStatsWindowPanel.m_categories)
+                {
+                    if (subpanel.Value.IsClippedFromParent())
+                    {
+                        return true;
+                        
+                    }
+
+                }
+                return false;
+            }
+        }
+
+        bool zooming = false;
+        protected override void OnMouseWheel(UIMouseEventParameter p)
+        {
+            if (!zooming)
+            {
+                float wd = p.wheelDelta;
+                if (wd < 0)
+                {
+                    if (fontchange.value < minfontsize) return;
+                    fontchange.value--;
+                }
+                if (wd > 0)
+                {
+                    if (fontchange.value > maxfontsize) return;
+                    fontchange.value++;
+                }
+                zooming = true;
+                foreach (KeyValuePair<string, CSLStatusWindowSubPanel> subpanel in myStatsWindowPanel.m_categories)
+                {
+                    foreach (CSLStatsPanelLabel l in subpanel.Value.m_textfields)
+                    {
+                        if (wd < 0)
+                        {
+                            l.textScale -= fontincr;
+                        }
+                        else
+                        {
+                            l.textScale += fontincr;
+                        }
+
+                    }
+                    subpanel.Value.FitToContents();
+                }
+
+            }
+            zooming = false;
+            base.OnMouseWheel(p);
+        }
+
         protected override void OnMouseMove(UIMouseEventParameter p)
         {
             //resizelabel.text = string.Format("x{0} y{1} w{2} h{3} px{4} py{5} r{6}", this.relativePosition.x,
@@ -182,6 +254,9 @@ namespace CSLStatsPanel
             if (dragging) this.position = new Vector3(this.position.x + p.moveDelta.x,
              this.position.y + p.moveDelta.y,
              this.position.z);
+
+            
+   
 
             if (resizing)
             {
@@ -363,7 +438,7 @@ namespace CSLStatsPanel
             mystrings.Add("CSL Stats Panel " + DateTime.Now.ToString("MM/dd/yy H:mm:ss"));
 
             BuildingManager bm = Singleton<BuildingManager>.instance;
-            int onfire=0,firehazard=0, buildingcount=0;
+            int onfire=0, buildingcount=0;
             for (int i = 0; i < bm.m_buildings.m_buffer.Count(); i++)
             {
                 if (!bm.m_buildings.m_buffer[i].m_flags.IsFlagSet(Building.Flags.Created)) continue;
@@ -444,7 +519,7 @@ namespace CSLStatsPanel
             //statstopull.Add(new StatisticsClassWrapper("Health Services", "Heath Care", ImmaterialResourceManager.Resource.HealthCare, 1, 1, "%"));
             //statstopull.Add(new StatisticsClassWrapper("Health Services", "Health", ImmaterialResourceManager.Resource.Health, 1, 1, "%"));
 
-            statstopull.Add(new StatisticsClassWrapper("Misc", "Entertainment", ImmaterialResourceManager.Resource.Entertainment, 1, 1, "%"));
+            statstopull.Add(new StatisticsClassWrapper("Misc", "Entertainment", ImmaterialResourceManager.Resource.Entertainment, 1, 1, ""));
             statstopull.Add(new StatisticsClassWrapper("Misc", "Attractiveness", ImmaterialResourceManager.Resource.Attractiveness, 1, 1, ""));
             statstopull.Add(new StatisticsClassWrapper("Misc", "Cargo Transport", ImmaterialResourceManager.Resource.CargoTransport, 1, 1, ""));
             //statstopull.Add(new StatisticsClassWrapper("Misc", "Coverage?", ImmaterialResourceManager.Resource.Coverage, 1, 1, ""));
