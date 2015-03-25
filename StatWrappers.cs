@@ -75,6 +75,22 @@ namespace CSLStatsPanel
                 return (usedvalue / capacityvalue);
             }
         }
+
+        public List<StatisticsClassWrapper> activeStats
+        {
+            get
+            {
+                List<StatisticsClassWrapper> l = new List<StatisticsClassWrapper>();
+                for (int i = 0; i < m_scwlist.Count(); i++)
+                {
+                    if (CSLStatsPanelConfigSettings.isStatActive(m_scwlist[i].category, m_scwlist[i].m_desc))
+                    {
+                        l.Add(m_scwlist[i]);
+                    }
+                }
+                return l;
+            }
+        }
     }
 
     public class StatisticsClassWrapper
@@ -258,127 +274,175 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
             buildingStats bs = new buildingStats();
 
             string cat = "Power";
-            statstopull.Add(new StatisticsClassWrapper(cat, "Used", ds.dmusage / 1000, 2, "MW"));
-            statstopull.Add(new StatisticsClassWrapper(cat, "Capacity", StatisticType.ElectricityCapacity, 1000, 16, "MW"));
-            catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, ds.dmusage.ToString(), "Capacity", "ToolbarIconElectricity"));
-            statstopull = new List<StatisticsClassWrapper>();
-
+            //if (CSLStatsPanelConfigSettings.isCatActive(cat))
+            {
+                statstopull.Add(new StatisticsClassWrapper(cat, "Used", ds.dmusage / 1000, 2, "MW"));
+                statstopull.Add(new StatisticsClassWrapper(cat, "Capacity", StatisticType.ElectricityCapacity, 1000, 16, "MW"));
+                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, ds.dmusage.ToString(), "Capacity", "ToolbarIconElectricity"));
+                statstopull = new List<StatisticsClassWrapper>();
+            }
 
             cat = "Water";
-            statstopull.Add(new StatisticsClassWrapper(cat, "Used", ds.waterbuffer, 2, "m³"));
-            statstopull.Add(new StatisticsClassWrapper(cat, "Capacity", StatisticType.WaterCapacity, 1, 16, "m³"));
-            statstopull.Add(new StatisticsClassWrapper(cat, "Pollution", StatisticType.WaterPollution, 1, 1, "%"));
-            catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Used", "Capacity"));
-            statstopull = new List<StatisticsClassWrapper>();
+            //if (CSLStatsPanelConfigSettings.isCatActive(cat))
+            {
+                statstopull.Add(new StatisticsClassWrapper(cat, "Used", ds.waterbuffer, 2, "m³"));
+                statstopull.Add(new StatisticsClassWrapper(cat, "Capacity", StatisticType.WaterCapacity, 1, 16, "m³"));
+                statstopull.Add(new StatisticsClassWrapper(cat, "Pollution", StatisticType.WaterPollution, 1, 1, "%"));
+                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Used", "Capacity"));
+                statstopull = new List<StatisticsClassWrapper>();
+            }
 
             cat = "Sewage";
-            statstopull.Add(new StatisticsClassWrapper(cat, "Used", ds.sewagebuffer, 2, "m³"));
-            statstopull.Add(new StatisticsClassWrapper(cat, "Capacity", StatisticType.SewageCapacity, 1, 16, "m³"));
-            catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Used", "Capacity"));
-            statstopull = new List<StatisticsClassWrapper>();
+            //if (CSLStatsPanelConfigSettings.isCatActive(cat))
+            {
+                statstopull.Add(new StatisticsClassWrapper(cat, "Used", ds.sewagebuffer, 2, "m³"));
+                statstopull.Add(new StatisticsClassWrapper(cat, "Capacity", StatisticType.SewageCapacity, 1, 16, "m³"));
+                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Used", "Capacity"));
+                statstopull = new List<StatisticsClassWrapper>();
+            }
 
             cat = "Garbage";
-            statstopull.Add(new StatisticsClassWrapper(cat, "Amount", StatisticType.GarbageAmount, 1000, 1, "K")); ;
-            int garbageamount = (int)statstopull.Last().m_value;
-            statstopull.Add(new StatisticsClassWrapper(cat, "Accumulation", ds.garbage));
-            garbageamount += (int)statstopull.Last().m_value;
-            statstopull.Add(new StatisticsClassWrapper(cat, "Total Inflow", garbageamount));
-            statstopull.Add(new StatisticsClassWrapper(cat, "Capacity", StatisticType.GarbageCapacity, 1000, 1, "K")); ;
-            int totalcapacity = (int)statstopull.Last().m_value;
-            statstopull.Add(new StatisticsClassWrapper(cat, "Incinerate Capacity", StatisticType.IncinerationCapacity, 1000, 16, "M")); ;
-            totalcapacity += (int)statstopull.Last().m_value;
-            statstopull.Add(new StatisticsClassWrapper(cat, "Total Capacity", totalcapacity));
-            statstopull.Add(new StatisticsClassWrapper(cat, "Piles", StatisticType.GarbagePiles, 1000, 1, "M"));
-            catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Total Inflow", "Total Capacity"));
-            statstopull = new List<StatisticsClassWrapper>();
+            //if (CSLStatsPanelConfigSettings.isCatActive(cat))
+            {
+                statstopull.Add(new StatisticsClassWrapper(cat, "Amount", StatisticType.GarbageAmount, 1000, 1, "K")); ;
+                int garbageamount = (int)statstopull.Last().m_value;
+                statstopull.Add(new StatisticsClassWrapper(cat, "Accumulation", ds.garbage));
+                garbageamount += (int)statstopull.Last().m_value;
+                statstopull.Add(new StatisticsClassWrapper(cat, "Total Inflow", garbageamount));
+                statstopull.Add(new StatisticsClassWrapper(cat, "Capacity", StatisticType.GarbageCapacity, 1000, 1, "K")); ;
+                int totalcapacity = (int)statstopull.Last().m_value;
+                statstopull.Add(new StatisticsClassWrapper(cat, "Incinerate Capacity", StatisticType.IncinerationCapacity, 1000, 16, "M")); ;
+                totalcapacity += (int)statstopull.Last().m_value;
+                statstopull.Add(new StatisticsClassWrapper(cat, "Total Capacity", totalcapacity));
+                statstopull.Add(new StatisticsClassWrapper(cat, "Piles", StatisticType.GarbagePiles, 1000, 1, "M"));
+                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Total Inflow", "Total Capacity"));
+                statstopull = new List<StatisticsClassWrapper>();
+            }
 
             cat = "Health Services";
-            statstopull.Add(new StatisticsClassWrapper(cat, "Health", ImmaterialResourceManager.Resource.Health, 1, 1, "%"));
-            StatisticsClassWrapper tempscw = statstopull[statstopull.Count() - 1];
-            int health = (int)tempscw.m_value;
-            statstopull.Add(new StatisticsClassWrapper(cat, "Well Being", ImmaterialResourceManager.Resource.Wellbeing, 1, 1, "%"));
-            statstopull.Add(new StatisticsClassWrapper(cat, "Sick", ds.sickcount));
-            statstopull.Add(new StatisticsClassWrapper(cat, "Capacity", StatisticType.HealCapacity, 1, 1, ""));
-            catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, (100-health).ToString(), "30")); 
-            statstopull = new List<StatisticsClassWrapper>();
+            //if (CSLStatsPanelConfigSettings.isCatActive(cat))
+            {
+                statstopull.Add(new StatisticsClassWrapper(cat, "Health", ImmaterialResourceManager.Resource.Health, 1, 1, "%"));
+                StatisticsClassWrapper tempscw = statstopull[statstopull.Count() - 1];
+                int health = (int)tempscw.m_value;
+                statstopull.Add(new StatisticsClassWrapper(cat, "Well Being", ImmaterialResourceManager.Resource.Wellbeing, 1, 1, "%"));
+                statstopull.Add(new StatisticsClassWrapper(cat, "Sick", ds.sickcount));
+                statstopull.Add(new StatisticsClassWrapper(cat, "Capacity", StatisticType.HealCapacity, 1, 1, ""));
+                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, (100 - health).ToString(), "30"));
+                statstopull = new List<StatisticsClassWrapper>();
+            }
             
             cat = "Death Services";
-            statstopull.Add(new StatisticsClassWrapper(cat, "Amount", StatisticType.DeadAmount, 1, 1, ""));
-            statstopull.Add(new StatisticsClassWrapper(cat, "Capacity", StatisticType.DeadCapacity, 1, 1, ""));
-            statstopull.Add(new StatisticsClassWrapper(cat, "Cremate Capacity", StatisticType.CremateCapacity, 1000, 1, "K"));
-            if (statstopull.Last().m_value > 0)
-                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Amount", "Cremate Capacity"));
-            else catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Amount", "Capacity"));
-            statstopull = new List<StatisticsClassWrapper>();
+            //if (CSLStatsPanelConfigSettings.isCatActive(cat))
+            {
+
+                statstopull.Add(new StatisticsClassWrapper(cat, "Amount", StatisticType.DeadAmount, 1, 1, ""));
+                statstopull.Add(new StatisticsClassWrapper(cat, "Capacity", StatisticType.DeadCapacity, 1, 1, ""));
+                statstopull.Add(new StatisticsClassWrapper(cat, "Cremate Capacity", StatisticType.CremateCapacity, 1000, 1, "K"));
+                if (statstopull.Last().m_value > 0)
+                    catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Amount", "Cremate Capacity"));
+                else catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Amount", "Capacity"));
+                statstopull = new List<StatisticsClassWrapper>();
+            }
 
             cat = "Buildings";
-            statstopull.Add(new StatisticsClassWrapper(cat, "Count", bs.buildingcount, 2, ""));
-            statstopull.Add(new StatisticsClassWrapper(cat, "Abandoned", StatisticType.AbandonedBuildings, 1, 1, ""));
-            catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Abandoned", (bs.buildingcount * .25).ToString()));
-            statstopull = new List<StatisticsClassWrapper>();
+            //if (CSLStatsPanelConfigSettings.isCatActive(cat))
+            {
+                statstopull.Add(new StatisticsClassWrapper(cat, "Count", bs.buildingcount, 2, ""));
+                statstopull.Add(new StatisticsClassWrapper(cat, "Abandoned", StatisticType.AbandonedBuildings, 1, 1, ""));
+                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Abandoned", (bs.buildingcount * .25).ToString()));
+                statstopull = new List<StatisticsClassWrapper>();
+            }
 
             cat = "Fire";
-            statstopull.Add(new StatisticsClassWrapper(cat, "Buildings Burning", bs.onfire, 2, ""));
-            statstopull.Add(new StatisticsClassWrapper(cat, "Hazard", ImmaterialResourceManager.Resource.FireHazard, 1, 1, "%"));
-            catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Hazard", "50"));
-            statstopull = new List<StatisticsClassWrapper>();
-
+            //if (CSLStatsPanelConfigSettings.isCatActive(cat))
+            {
+                statstopull.Add(new StatisticsClassWrapper(cat, "Buildings Burning", bs.onfire, 2, ""));
+                statstopull.Add(new StatisticsClassWrapper(cat, "Hazard", ImmaterialResourceManager.Resource.FireHazard, 1, 1, "%"));
+                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Hazard", "50"));
+                statstopull = new List<StatisticsClassWrapper>();
+            }
             //statstopull.Add(new StatisticsClassWrapper("Health Services", "Heath Care", ImmaterialResourceManager.Resource.HealthCare, 1, 1, "%"));
             //statstopull.Add(new StatisticsClassWrapper("Health Services", "Health", ImmaterialResourceManager.Resource.Health, 1, 1, "%"));
 
             cat = "Economy";
-            statstopull.Add(new StatisticsClassWrapper(cat, "Entertainment", ImmaterialResourceManager.Resource.Entertainment, 1, 1, ""));
-            statstopull.Add(new StatisticsClassWrapper(cat, "Attractiveness", ImmaterialResourceManager.Resource.Attractiveness, 1, 1, ""));
-            statstopull.Add(new StatisticsClassWrapper(cat, "Cargo Transport", ImmaterialResourceManager.Resource.CargoTransport, 1, 1, ""));
-            //statstopull.Add(new StatisticsClassWrapper("Misc", "Coverage?", ImmaterialResourceManager.Resource.Coverage, 1, 1, ""));
-            statstopull.Add(new StatisticsClassWrapper(cat, "Density", ImmaterialResourceManager.Resource.Density, 1, 1, ""));
-            statstopull.Add(new StatisticsClassWrapper(cat, "Land Value", ImmaterialResourceManager.Resource.LandValue, 1, 1, "₡/m²"));
-            statstopull.Add(new StatisticsClassWrapper(cat, "ImmaterialResource", StatisticType.ImmaterialResource, 1000, 1, "M"));
-            statstopull.Add(new StatisticsClassWrapper(cat, "Goods Produced", StatisticType.GoodsProduced, 1000, 1, "K"));
-            
-            catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "", ""));
-            statstopull = new List<StatisticsClassWrapper>();
+            //if (CSLStatsPanelConfigSettings.isCatActive(cat))
+            {
+                statstopull.Add(new StatisticsClassWrapper(cat, "Entertainment", ImmaterialResourceManager.Resource.Entertainment, 1, 1, ""));
+                statstopull.Add(new StatisticsClassWrapper(cat, "Attractiveness", ImmaterialResourceManager.Resource.Attractiveness, 1, 1, ""));
+                statstopull.Add(new StatisticsClassWrapper(cat, "Cargo Transport", ImmaterialResourceManager.Resource.CargoTransport, 1, 1, ""));
+                //statstopull.Add(new StatisticsClassWrapper("Misc", "Coverage?", ImmaterialResourceManager.Resource.Coverage, 1, 1, ""));
+                statstopull.Add(new StatisticsClassWrapper(cat, "Density", ImmaterialResourceManager.Resource.Density, 1, 1, ""));
+                statstopull.Add(new StatisticsClassWrapper(cat, "Land Value", ImmaterialResourceManager.Resource.LandValue, 1, 1, "₡/m²"));
+                statstopull.Add(new StatisticsClassWrapper(cat, "ImmaterialResource", StatisticType.ImmaterialResource, 1000, 1, "M"));
+                statstopull.Add(new StatisticsClassWrapper(cat, "Goods Produced", StatisticType.GoodsProduced, 1000, 1, "K"));
+                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "", ""));
+                statstopull = new List<StatisticsClassWrapper>();
+            }
 
             cat = "Citizens";
-            statstopull.Add(new StatisticsClassWrapper(cat, "Count", ds.citizencount, 2, ""));
-            statstopull.Add(new StatisticsClassWrapper(cat, "Move Rate", StatisticType.MoveRate, 1, 1, ""));
-            statstopull.Add(new StatisticsClassWrapper(cat, "Birth Rate", StatisticType.BirthRate, 1, 1, ""));
-            statstopull.Add(new StatisticsClassWrapper(cat, "Death Rate", StatisticType.DeathRate, 1, 1, ""));
-            statstopull.Add(new StatisticsClassWrapper(cat, "Eligible Workers", StatisticType.EligibleWorkers, 1, 1, ""));
-            statstopull.Add(new StatisticsClassWrapper(cat, "Unemployed", StatisticType.Unemployed, 1, 1, ""));
-            catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Death Rate", "Birth Rate"));
-            statstopull = new List<StatisticsClassWrapper>();
+            //if (CSLStatsPanelConfigSettings.isCatActive(cat))
+            {
+
+                statstopull.Add(new StatisticsClassWrapper(cat, "Count", ds.citizencount, 2, ""));
+                statstopull.Add(new StatisticsClassWrapper(cat, "Move Rate", StatisticType.MoveRate, 1, 1, ""));
+                statstopull.Add(new StatisticsClassWrapper(cat, "Birth Rate", StatisticType.BirthRate, 1, 1, ""));
+                statstopull.Add(new StatisticsClassWrapper(cat, "Death Rate", StatisticType.DeathRate, 1, 1, ""));
+                statstopull.Add(new StatisticsClassWrapper(cat, "Eligible Workers", StatisticType.EligibleWorkers, 1, 1, ""));
+                statstopull.Add(new StatisticsClassWrapper(cat, "Unemployed", StatisticType.Unemployed, 1, 1, ""));
+                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Death Rate", "Birth Rate"));
+                statstopull = new List<StatisticsClassWrapper>();
+            }
 
             cat = "Education";
-            statstopull.Add(new StatisticsClassWrapper(cat, "Educated", StatisticType.EducatedCount, 1, 1, ""));
-            statstopull.Add(new StatisticsClassWrapper(cat, "Students", StatisticType.StudentCount, 1, 1, ""));
-            statstopull.Add(new StatisticsClassWrapper(cat, "Max Students", StatisticType.EducationCapacity, 1, 1, ""));
-            catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Students", "Max Students"));
-            statstopull = new List<StatisticsClassWrapper>();
+            //if (CSLStatsPanelConfigSettings.isCatActive(cat))
+            {
+
+                statstopull.Add(new StatisticsClassWrapper(cat, "Educated", StatisticType.EducatedCount, 1, 1, ""));
+                statstopull.Add(new StatisticsClassWrapper(cat, "Students", StatisticType.StudentCount, 1, 1, ""));
+                statstopull.Add(new StatisticsClassWrapper(cat, "Max Students", StatisticType.EducationCapacity, 1, 1, ""));
+                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Students", "Max Students"));
+                statstopull = new List<StatisticsClassWrapper>();
+            }
 
             cat = "Crime";
-            statstopull.Add(new StatisticsClassWrapper(cat, "Crimes", StatisticType.CrimeRate, 1, 1, ""));
-            statstopull.Add(new StatisticsClassWrapper(cat, "Crime Rate", ds.finalcrimerate, 2, "%"));
-            catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Crime Rate", "20"));
-            statstopull = new List<StatisticsClassWrapper>();
+            //if (CSLStatsPanelConfigSettings.isCatActive(cat))
+            {
+
+                statstopull.Add(new StatisticsClassWrapper(cat, "Crimes", StatisticType.CrimeRate, 1, 1, ""));
+                statstopull.Add(new StatisticsClassWrapper(cat, "Crime Rate", ds.finalcrimerate, 2, "%"));
+                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Crime Rate", "20"));
+                statstopull = new List<StatisticsClassWrapper>();
+            }
 
             cat = "Tourists";
-            statstopull.Add(new StatisticsClassWrapper(cat, "Visits", StatisticType.TouristVisits, 1, 1, ""));
-            statstopull.Add(new StatisticsClassWrapper(cat, "Incoming", StatisticType.IncomingTourists, 1, 1, ""));
-            catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "", ""));
-            statstopull = new List<StatisticsClassWrapper>();
+            //if (CSLStatsPanelConfigSettings.isCatActive(cat))
+            {
+
+                statstopull.Add(new StatisticsClassWrapper(cat, "Visits", StatisticType.TouristVisits, 1, 1, ""));
+                statstopull.Add(new StatisticsClassWrapper(cat, "Incoming", StatisticType.IncomingTourists, 1, 1, ""));
+                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "", ""));
+                statstopull = new List<StatisticsClassWrapper>();
+            }
 
             cat = "Public Transit";
-            statstopull.Add(new StatisticsClassWrapper(cat, "Avg Passengers", StatisticType.AveragePassengers, 1, 1, ""));
-            statstopull.Add(new StatisticsClassWrapper(cat, "Availability", ImmaterialResourceManager.Resource.PublicTransport, 1, 1, "%"));
-            catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "80", "Availability"));
-            statstopull = new List<StatisticsClassWrapper>();
+            //if (CSLStatsPanelConfigSettings.isCatActive(cat))
+            {
+
+                statstopull.Add(new StatisticsClassWrapper(cat, "Avg Passengers", StatisticType.AveragePassengers, 1, 1, ""));
+                statstopull.Add(new StatisticsClassWrapper(cat, "Availability", ImmaterialResourceManager.Resource.PublicTransport, 1, 1, "%"));
+                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "80", "Availability"));
+                statstopull = new List<StatisticsClassWrapper>();
+            }
 
             cat = "Pollution";
-            statstopull.Add(new StatisticsClassWrapper("Pollution", "Noise", ImmaterialResourceManager.Resource.NoisePollution, 1, 1, "%"));
-            statstopull.Add(new StatisticsClassWrapper("Pollution", "Ground", ds.groundpollution, 2, "%"));
-            catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "", ""));
-            statstopull = new List<StatisticsClassWrapper>();
+            //if (CSLStatsPanelConfigSettings.isCatActive(cat))
+            {
+                statstopull.Add(new StatisticsClassWrapper("Pollution", "Noise", ImmaterialResourceManager.Resource.NoisePollution, 1, 1, "%"));
+                statstopull.Add(new StatisticsClassWrapper("Pollution", "Ground", ds.groundpollution, 2, "%"));
+                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "", ""));
+                statstopull = new List<StatisticsClassWrapper>();
+            }
 
             return catstopull;
         }

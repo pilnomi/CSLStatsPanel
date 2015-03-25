@@ -43,7 +43,7 @@ namespace CSLStatsPanel
             statButton.BringToFront();
             statButton.text = "CSL Stats Panel";
             statButton.eventClick += new MouseEventHandler(statButton_eventClick);
-
+            
             initialized = true;
             running = false;
 
@@ -84,7 +84,7 @@ namespace CSLStatsPanel
             if (running) return;
             running = true;
             //myStatsWindowPanel.getstats2();
-            myStatsWindowPanel.updateText(MasterStatsWrapper.getstats3());
+            myStatsWindowPanel.updateText(CSLStatsPanelConfigSettings.Categories(true));
             running = false;
         }
     }
@@ -96,7 +96,7 @@ namespace CSLStatsPanel
         UIPanel headerpanel;
         UILabel resizelabel, headertext;
         bool firstrun = true;
-        bool dragging = false, resizing = false;
+        bool dragging = false;
         public SavedFloat
             windowx = new SavedFloat("ModCSLStatsPanelWindowPosX", Settings.gameSettingsFile, 0, true),
             windowy = new SavedFloat("ModCSLStatsPanelWindowPosY", Settings.gameSettingsFile, 0, true),
@@ -111,9 +111,53 @@ namespace CSLStatsPanel
             init();
         }
 
+        bool isresetting = false;
+        public void resetStatsWindow()
+        {
+            if (isresetting) return;
+            if (myStatsWindowPanel == null) return;
+            isresetting = true;
+            myStatsWindowPanel.reset();
+            firstrun = true;
+            isresetting = false;
+            
+        }
+        public void addStatsWindowPanel()
+        {
+            myStatsWindowPanel = (CSLStatusWindowPanel)this.AddUIComponent(typeof(CSLStatusWindowPanel));
+            myStatsWindowPanel.name = "CSLStatsPanel";
+            myStatsWindowPanel.color = CSLStatsPanelConfigSettings.DefaultPanelColor;
+        }
+
+        UIButton configButton = null;
+        public void addConfigureButton()
+        {
+            if (configButton != null) this.RemoveUIComponent(configButton);
+            configButton = (UIButton)myresizepanel.AddUIComponent(typeof(UIButton));
+            configButton.width = 125;
+            configButton.height = 20;
+            configButton.normalBgSprite = "ButtonMenu";
+            configButton.hoveredBgSprite = "ButtonMenuHovered";
+            configButton.focusedBgSprite = "ButtonMenuFocused";
+            configButton.pressedBgSprite = "ButtonMenuPressed";
+            configButton.textColor = new Color32(186, 217, 238, 0);
+            configButton.disabledTextColor = new Color32(7, 7, 7, 255);
+            configButton.hoveredTextColor = new Color32(7, 132, 255, 255);
+            configButton.focusedTextColor = new Color32(255, 255, 255, 255);
+            configButton.pressedTextColor = new Color32(30, 30, 44, 255);
+            configButton.color = new Color32(configButton.color.r, configButton.color.g, configButton.color.b, 255);
+            //configButton.transformPosition = new Vector3(1.2f, -0.93f);
+            configButton.BringToFront();
+            configButton.text = "Configure";
+            configButton.eventClick += new MouseEventHandler(configButton_eventClick);
+            
+            
+        }
+
+
         public void init()
         {
-            this.color = new Color32(0, 0, 255, 200);
+            this.color = CSLStatsPanelConfigSettings.DefaultPanelColor;
             this.backgroundSprite = "GenericPanel";
             this.autoLayoutDirection = LayoutDirection.Vertical;
             this.autoLayoutStart = LayoutStart.TopLeft;
@@ -129,9 +173,8 @@ namespace CSLStatsPanel
             headertext.text = "CSL Stats Panel";
             headertext.CenterToParent();
 
-            myStatsWindowPanel = (CSLStatusWindowPanel)this.AddUIComponent(typeof(CSLStatusWindowPanel));
-            myStatsWindowPanel.name = "CSLStatsPanel";
-            myStatsWindowPanel.color = new Color32(0, 0, 255, 200);
+            addStatsWindowPanel();
+
             myresizepanel = (UIResizeHandle)this.AddUIComponent(typeof(UIResizeHandle));
             myresizepanel.name = "CSLStatsResizePanel";
             myresizepanel.height = 20;
@@ -140,8 +183,36 @@ namespace CSLStatsPanel
             //myresizepanel.anchor = UIAnchorStyle.Bottom;
             //myresizepanel.anchor = UIAnchorStyle.Right;
             resizelabel = myresizepanel.AddUIComponent<UILabel>();
-                        
+
+            addConfigureButton();
+
             setdefaultpos();
+        }
+
+        public override void OnDestroy()
+        {
+            if (myconfigwindow != null) GameObject.Destroy(myconfigwindow);
+            base.OnDestroy();
+        }
+
+        ConfigWindow myconfigwindow = null;
+        void configButton_eventClick(UIComponent component, UIMouseEventParameter eventParam)
+        {
+            if (myconfigwindow == null)
+            {
+                myconfigwindow = (ConfigWindow)UIView.GetAView().AddUIComponent(typeof(ConfigWindow));
+                myconfigwindow.eventStatsConfigChanged += new ConfigWindow.eventStatsConfigChangedHandler(myconfigwindow_eventStatsConfigChanged);
+            }
+            else
+            {
+                GameObject.Destroy(myconfigwindow);
+                myconfigwindow = null;
+            }
+        }
+
+        void myconfigwindow_eventStatsConfigChanged(object sender, EventArgs e)
+        {
+            resetStatsWindow();
         }
 
         void setdefaultpos()
@@ -167,7 +238,8 @@ namespace CSLStatsPanel
 
         public void updateText(List<string> s) { myStatsWindowPanel.updateText(s);}
         public void updateText(List<StatisticsCategoryWrapper> l) 
-        { 
+        {
+            if (isresetting) return;
             myStatsWindowPanel.updateText(l);
             if (firstrun) setdefaultpos();
             firstrun = false;
@@ -194,27 +266,10 @@ namespace CSLStatsPanel
             //this.FitChildrenHorizontally();
 
         }
-
-        public void getstats2()
-        {
-            myStatsWindowPanel.getstats2();
-            if (firstrun) setdefaultpos();
-            firstrun = false;
-        }
-        
-        bool checkresizebox(UIMouseEventParameter p)
-        {
-            
-            if (p.position.x >= this.relativePosition.x + this.width - 10
-                && p.position.y >= this.relativePosition.y + this.height - 10)
-                return true;
-            return false;
-        }
+       
         protected override void OnMouseDown(UIMouseEventParameter p)
         {
-
-            if (checkresizebox(p)) resizing = true;
-            else if (!resizing) dragging = true;
+            dragging = true;
         }
         protected override void OnMouseUp(UIMouseEventParameter p)
         {
@@ -223,9 +278,17 @@ namespace CSLStatsPanel
                 windowx.value = this.position.x; windowy.value = this.position.y;
                 windoww.value = this.width; windowh.value = this.height;
             }
-            dragging = false; resizing = false;
+            dragging = false; 
         }
-
+        protected override void OnMouseMove(UIMouseEventParameter p)
+        {
+            //resizelabel.text = string.Format("x{0} y{1} w{2} h{3} px{4} py{5} r{6}", this.relativePosition.x,
+            //    this.relativePosition.y, this.width, this.height, p.position.x, p.position.y,
+            //    checkresizebox(p));
+            if (dragging) this.position = new Vector3(this.position.x + p.moveDelta.x,
+             this.position.y + p.moveDelta.y,
+             this.position.z);
+        }
 
         bool childrenareclipped
         {
@@ -243,7 +306,6 @@ namespace CSLStatsPanel
                 return false;
             }
         }
-
         bool zooming = false;
         protected override void OnMouseWheel(UIMouseEventParameter p)
         {
@@ -281,29 +343,6 @@ namespace CSLStatsPanel
             }
             zooming = false;
             base.OnMouseWheel(p);
-        }
-
-        protected override void OnMouseMove(UIMouseEventParameter p)
-        {
-            //resizelabel.text = string.Format("x{0} y{1} w{2} h{3} px{4} py{5} r{6}", this.relativePosition.x,
-            //    this.relativePosition.y, this.width, this.height, p.position.x, p.position.y,
-            //    checkresizebox(p));
-            if (dragging) this.position = new Vector3(this.position.x + p.moveDelta.x,
-             this.position.y + p.moveDelta.y,
-             this.position.z);
-
-            
-   
-
-            if (resizing)
-            {
-                this.width += p.moveDelta.x;
-                this.height -= p.moveDelta.y;
-                myStatsWindowPanel.width = this.width;
-                myStatsWindowPanel.height = this.height - 20;
-                myresizepanel.width = this.width;
-                myresizepanel.height = 20;
-            }
         }
     }
 
@@ -349,6 +388,22 @@ namespace CSLStatsPanel
             m_textfields = new List<CSLStatsPanelLabel>();
         }
 
+        public void reset()
+        {
+            foreach (KeyValuePair<string, CSLStatusWindowSubPanel> p in m_categories)
+            {
+                this.RemoveUIComponent(p.Value);
+                UnityEngine.Object.Destroy(p.Value);
+                // GameObject.Destroy(p.Value);
+            }
+            m_categories = new Dictionary<string, CSLStatusWindowSubPanel>();
+            m_textfields = new List<CSLStatsPanelLabel>();
+            firstrun = true;
+            mycount = 0;
+            running = false;
+            
+        }
+
         public void init()
         {
             if (initialized) return;
@@ -367,6 +422,7 @@ namespace CSLStatsPanel
         public override void Start()
         {
             init();
+            base.Start();
         }
 
         public void updateText(List<StatisticsCategoryWrapper> categorydata)
@@ -381,9 +437,10 @@ namespace CSLStatsPanel
             foreach (KeyValuePair<string, CSLStatusWindowSubPanel> p in m_categories)
                 p.Value.m_stringbuilder = new List<string>();
 
-            statlog.log("looping stats");
+            statlog.log("looping categories" + categorydata.Count().ToString());
             for (int i = 0; i < categorydata.Count(); i++)
             {
+                if (categorydata[i].m_scwlist.Count() == 0) continue;
                 string currentcat = categorydata[i].m_category;
                 if (string.IsNullOrEmpty(currentcat)) currentcat = "default";
 
@@ -404,12 +461,13 @@ namespace CSLStatsPanel
                     else m_categories[currentcat].color = new Color32(0, 255, 0, 200); //green
                 }
 
-                for (int c=0; c < categorydata[i].m_scwlist.Count(); c++)
+                List<StatisticsClassWrapper> myscwlist = categorydata[i].activeStats;
+                for (int c = 0; c < myscwlist.Count(); c++)
                 {
                     if (m_categories[currentcat].m_stringbuilder.Count() == 0)
                         m_categories[currentcat].m_stringbuilder.Add(currentcat);
 
-                    m_categories[currentcat].m_stringbuilder.Add(categorydata[i].m_scwlist[c].statstring);
+                    m_categories[currentcat].m_stringbuilder.Add(myscwlist[c].statstring);
                 }
             }
 
@@ -429,59 +487,7 @@ namespace CSLStatsPanel
             firstrun = false;
             running = false;
         }
-
-
-        public void updateText(List<StatisticsClassWrapper> TextFields)
-        {
-            statlog.log("update text scw initialized=" + initialized.ToString() + " running=" + running.ToString());
-            if (!initialized) return;
-            if (running) return;
-            running = true;
-
-            statlog.log("reseting stringbuilders");
-            foreach (KeyValuePair<string, CSLStatusWindowSubPanel> p in m_categories)
-                p.Value.m_stringbuilder = new List<string>();
-
-            statlog.log("looping stats");
-            for (int i = 0; i < TextFields.Count; i++)
-            {
-                string currentcat = TextFields[i].category;
-                if (string.IsNullOrEmpty(currentcat)) currentcat = "default";
-
-                if (!m_categories.Keys.Contains(currentcat))
-                {
-                    statlog.log("adding category " + currentcat);
-                    m_categories.Add(currentcat, (CSLStatusWindowSubPanel)this.AddUIComponent(typeof(CSLStatusWindowSubPanel)));
-                }
-
-                if (m_categories[currentcat].m_stringbuilder.Count() == 0)
-                {
-                    m_categories[currentcat].m_stringbuilder.Add(currentcat);
-                }
-
-                m_categories[currentcat].m_stringbuilder.Add(TextFields[i].statstring);
-            }
-
-            foreach (KeyValuePair<string, CSLStatusWindowSubPanel> p in m_categories)
-            {
-                statlog.log("calling updatetext on subpanel " + p.Key);
-                p.Value.updateText(p.Value.m_stringbuilder);
-                p.Value.m_stringbuilder = new List<string>();
-            }
-            if (firstrun && !m_issubpanel)
-            {
-                //UIResizeHandle rh = (UIResizeHandle)this.AddUIComponent(typeof(UIResizeHandle));
-                //UILabel resizelabel = rh.AddUIComponent<UILabel>();
-                //resizelabel.text = "resize me";
-                //resizelabel.autoSize = true;
-                this.FitChildrenVertically();
-                this.FitChildrenHorizontally();
-                this.FitToContents();
-            }
-            firstrun = false;
-            running = false;
-        }
-
+   
         public void updateText(List<string> TextFields)
         {
             statlog.log("update text initialized=" + initialized.ToString() + " running=" + running.ToString());
@@ -529,173 +535,9 @@ namespace CSLStatsPanel
             running = false;
         }
 
-        public void getstats2()
-        {
-            if (!initialized) init();
-            SimulationManager simManager = Singleton<SimulationManager>.instance;
-            if (simManager == null) return;
-
-            List<string> mystrings = new List<string>();
-
-            mystrings.Add("CSL Stats Panel " + DateTime.Now.ToString("MM/dd/yy H:mm:ss"));
-
-            BuildingManager bm = Singleton<BuildingManager>.instance;
-            int onfire=0, buildingcount=0;
-            for (int i = 0; i < bm.m_buildings.m_buffer.Count(); i++)
-            {
-                if (!bm.m_buildings.m_buffer[i].m_flags.IsFlagSet(Building.Flags.Created)) continue;
-                if (bm.m_buildings.m_buffer[i].m_flags.IsFlagSet(Building.Flags.Original)) continue;
-                if (bm.m_buildings.m_buffer[i].m_flags.IsFlagSet(Building.Flags.None)) continue;
-                if (bm.m_buildings.m_buffer[i].m_flags.IsFlagSet(Building.Flags.Untouchable)) continue;
-                
-                buildingcount++;
-                if (bm.m_buildings.m_buffer[i].m_fireIntensity > 0) onfire++;
-                
-            }
-            double waterbuffer = 0, sewagebuffer = 0, watercapacity = 0, sewagecapacity = 0,
-                garbage=0;
-
-            List<StatisticsClassWrapper> statstopull = new List<StatisticsClassWrapper>();
-            
-            DistrictManager dm = Singleton<DistrictManager>.instance;
-            int dmcount = 0;
-            int dmusage = 0, dmproduction = 0;
-            int finalcrimerate = 0, citizencount=0, sickcount=0, groundpollution=0;
-            for (int i = 0; i < 1; i++)
-            {
-                //if (!dm.m_districts.m_buffer[i].m_flags.IsFlagSet(District.Flags.Created)) continue;
-                //if (dm.m_districts.m_buffer[i].m_flags.IsFlagSet(District.Flags.CustomName)) continue;
-                //citizencount += (int)dm.m_districts.m_buffer[i].m_populationData.m_finalCount;
-                    
-                int localcitizencount = (int)(dm.m_districts.m_buffer[i].m_adultData.m_finalCount
-                    + dm.m_districts.m_buffer[i].m_childData.m_finalCount
-                    + dm.m_districts.m_buffer[i].m_youngData.m_finalCount
-                    + dm.m_districts.m_buffer[i].m_teenData.m_finalCount
-                    + dm.m_districts.m_buffer[i].m_seniorData.m_finalCount);
-                    groundpollution += dm.m_districts.m_buffer[i].GetGroundPollution();
-                    dmcount++;
-                    citizencount += localcitizencount;
-                    dmusage += dm.m_districts.m_buffer[i].GetElectricityConsumption();
-                    dmproduction += dm.m_districts.m_buffer[i].GetElectricityCapacity();
-                    waterbuffer += dm.m_districts.m_buffer[i].GetWaterConsumption();
-                    sewagebuffer += dm.m_districts.m_buffer[i].GetSewageAccumulation();
-                    sewagecapacity += dm.m_districts.m_buffer[i].GetSewageCapacity();
-                    watercapacity += dm.m_districts.m_buffer[i].GetWaterCapacity();
-                    garbage += dm.m_districts.m_buffer[i].GetGarbageAccumulation();
-                    sickcount += dm.m_districts.m_buffer[i].GetSickCount();
-                    finalcrimerate += (int)dm.m_districts.m_buffer[i].m_finalCrimeRate;
-            }
-
-            statstopull.Add(new StatisticsClassWrapper("Power", "Used", dmusage / 1000, 2, "MW"));
-            statstopull.Add(new StatisticsClassWrapper("Power", "Capacity", StatisticType.ElectricityCapacity, 1000, 16, "MW"));
-            
-            statstopull.Add(new StatisticsClassWrapper("Water", "Used", waterbuffer, 2, "m³"));
-            statstopull.Add(new StatisticsClassWrapper("Water", "Capacity", StatisticType.WaterCapacity, 1, 16, "m³"));
-            statstopull.Add(new StatisticsClassWrapper("Water", "Pollution", StatisticType.WaterPollution, 1, 1, "%"));
-            statstopull.Add(new StatisticsClassWrapper("Water", "Sewage", sewagebuffer, 2, "m³"));
-            statstopull.Add(new StatisticsClassWrapper("Water", "Capacity", StatisticType.SewageCapacity, 1, 16, "m³"));
-
-            //statstopull.Add(new StatisticsClassWrapper(""));
-            statstopull.Add(new StatisticsClassWrapper("Garbage", "Amount", StatisticType.GarbageAmount, 1000, 1, "K")); ;
-            statstopull.Add(new StatisticsClassWrapper("Garbage", "Accumulation", garbage));
-            statstopull.Add(new StatisticsClassWrapper("Garbage", "Capacity", StatisticType.GarbageCapacity, 1000, 1, "K")); ;
-            statstopull.Add(new StatisticsClassWrapper("Garbage", "Incinerate Capacity", StatisticType.IncinerationCapacity, 1000, 16, "M")); ;
-            statstopull.Add(new StatisticsClassWrapper("Garbage", "Piles", StatisticType.GarbagePiles, 1000, 1, "M")); ;
-            //statstopull.Add(new StatisticsClassWrapper("Garbage", "...buffer", garbagebuffer));
-
-            statstopull.Add(new StatisticsClassWrapper("Health Services", "Health", ImmaterialResourceManager.Resource.Health, 1, 1, "%"));
-            statstopull.Add(new StatisticsClassWrapper("Health Services", "Well Being", ImmaterialResourceManager.Resource.Wellbeing, 1, 1, "%"));
-            statstopull.Add(new StatisticsClassWrapper("Health Services", "Sick", sickcount));
-            statstopull.Add(new StatisticsClassWrapper("Health Services", "Capacity", StatisticType.HealCapacity, 1, 1, ""));
-            
-            statstopull.Add(new StatisticsClassWrapper("Death Services", "Amount", StatisticType.DeadAmount, 1, 1, ""));
-            statstopull.Add(new StatisticsClassWrapper("Death Services", "Capacity", StatisticType.DeadCapacity, 1, 1, ""));
-            statstopull.Add(new StatisticsClassWrapper("Death Services", "Cremate Capacity", StatisticType.CremateCapacity, 1000, 1, "K"));
-
-            statstopull.Add(new StatisticsClassWrapper("Buildings", "Count", buildingcount, 2, ""));
-            statstopull.Add(new StatisticsClassWrapper("Buildings", "Abandoned", StatisticType.AbandonedBuildings, 1, 1, ""));
-            
-            statstopull.Add(new StatisticsClassWrapper("Fire", "Buildings Burning", onfire, 2, ""));
-            statstopull.Add(new StatisticsClassWrapper("Fire", "Hazard", ImmaterialResourceManager.Resource.FireHazard, 1, 1, "%"));
-            
-            //statstopull.Add(new StatisticsClassWrapper("Health Services", "Heath Care", ImmaterialResourceManager.Resource.HealthCare, 1, 1, "%"));
-            //statstopull.Add(new StatisticsClassWrapper("Health Services", "Health", ImmaterialResourceManager.Resource.Health, 1, 1, "%"));
-
-            statstopull.Add(new StatisticsClassWrapper("Misc", "Entertainment", ImmaterialResourceManager.Resource.Entertainment, 1, 1, ""));
-            statstopull.Add(new StatisticsClassWrapper("Misc", "Attractiveness", ImmaterialResourceManager.Resource.Attractiveness, 1, 1, ""));
-            statstopull.Add(new StatisticsClassWrapper("Misc", "Cargo Transport", ImmaterialResourceManager.Resource.CargoTransport, 1, 1, ""));
-            //statstopull.Add(new StatisticsClassWrapper("Misc", "Coverage?", ImmaterialResourceManager.Resource.Coverage, 1, 1, ""));
-            statstopull.Add(new StatisticsClassWrapper("Misc", "Density", ImmaterialResourceManager.Resource.Density, 1, 1, ""));
-            statstopull.Add(new StatisticsClassWrapper("Misc", "Land Value", ImmaterialResourceManager.Resource.LandValue, 1, 1, "₡/m²"));
-            statstopull.Add(new StatisticsClassWrapper("Misc", "ImmaterialResource", StatisticType.ImmaterialResource, 1000, 1, "M"));
-            statstopull.Add(new StatisticsClassWrapper("Misc", "Goods Produced", StatisticType.GoodsProduced, 1000, 1, "K"));
-            
-            statstopull.Add(new StatisticsClassWrapper("Citizens", "Count", citizencount, 2, ""));
-            statstopull.Add(new StatisticsClassWrapper("Citizens", "Move Rate", StatisticType.MoveRate, 1, 1, ""));
-            statstopull.Add(new StatisticsClassWrapper("Citizens", "Birth Rate", StatisticType.BirthRate, 1, 1, ""));
-            statstopull.Add(new StatisticsClassWrapper("Citizens", "Death Rate", StatisticType.DeathRate, 1, 1, ""));
-            statstopull.Add(new StatisticsClassWrapper("Citizens", "Eligible Workers", StatisticType.EligibleWorkers, 1, 1, ""));
-            statstopull.Add(new StatisticsClassWrapper("Citizens", "Unemployed", StatisticType.Unemployed, 1, 1, ""));
-           
-            statstopull.Add(new StatisticsClassWrapper("Education", "Educated", StatisticType.EducatedCount, 1, 1, ""));
-            statstopull.Add(new StatisticsClassWrapper("Education", "Students", StatisticType.StudentCount, 1, 1, ""));
-            statstopull.Add(new StatisticsClassWrapper("Education", "Max Students", StatisticType.EducationCapacity, 1, 1, ""));
-            
-            statstopull.Add(new StatisticsClassWrapper("Crime", "Crimes?", StatisticType.CrimeRate, 1, 1, ""));
-            statstopull.Add(new StatisticsClassWrapper("Crime", "Crime Rate", finalcrimerate, 2, "%"));
-
-            statstopull.Add(new StatisticsClassWrapper("Tourists", "Visits", StatisticType.TouristVisits, 1, 1, ""));
-            statstopull.Add(new StatisticsClassWrapper("Tourists", "Incoming", StatisticType.IncomingTourists, 1, 1, ""));
-            statstopull.Add(new StatisticsClassWrapper("Public Transit", "Avg Passengers", StatisticType.AveragePassengers, 1, 1, ""));
-            statstopull.Add(new StatisticsClassWrapper("Public Transit", "PublicTransport", ImmaterialResourceManager.Resource.PublicTransport, 1, 1, "%"));
-            
-            statstopull.Add(new StatisticsClassWrapper("Pollution", "Noise", ImmaterialResourceManager.Resource.NoisePollution, 1, 1, "%"));
-            statstopull.Add(new StatisticsClassWrapper("Pollution", "Ground", groundpollution,2, "%"));
-            
-            
-            
-            //int buildingcount = buildManager.m_buildingCount;
-            //mystrings.Add("build count: " + buildingcount);
-
-            try
-            {
-                updateText(statstopull);
-            }
-            catch (Exception ex)
-            {
-                statlog.log(ex.Message);
-                running = false;
-            }
-            /*
-                        for (int i = 0; i < statstopull.Count; i++)
-                            mystrings.Add(statstopull[i].statstring);
-
-
-                        try
-                        {
-                            updateText(mystrings);
-                        }
-                        catch { running = false; }
-                        */
-
-            //running = false;
-
-        }
-    }
-
-    public class CSLStatsPanelItem : UIPanel
-    {
-         
-        public override void Start()
-        {
-            this.backgroundSprite = "GenericPanel";
-            this.autoSize = true;
-            this.color = new Color32(255, 255, 255, 200);
-        }
-
         
-
     }
+
     public class CSLStatsPanelLabel : UILabel
     {
         public CSLStatsPanelLabel()

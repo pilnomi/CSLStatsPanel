@@ -64,7 +64,7 @@ namespace CSLStatsPanel
                 if (man.loading.loadingComplete && !m_initialized) init();
                 //update about once every 3 seconds at 60fps. 
                 numberofcalls++;
-                if (numberofcalls < 60 * 3) return;
+                if (numberofcalls < 60 * CSLStatsPanelConfigSettings.PanelRefreshRate) return;
                 numberofcalls = 0;
                 if (man.loading.loadingComplete & m_initialized)
                 {
@@ -92,7 +92,7 @@ namespace CSLStatsPanel
             //static bool keeponlylastmessage = false;
             public static void log(string logtext)
             {
-                if (!enablelogging) return;
+                //if (!enablelogging) return;
                 /*
                 System.IO.StreamWriter wr;
                 if (System.IO.File.Exists("cslstatslog.txt") && !keeponlylastmessage)
