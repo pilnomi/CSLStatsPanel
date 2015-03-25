@@ -61,6 +61,7 @@ namespace CSLStatsPanel
             //called about ~60 times per second. (or max frame rate user is getting atm imagine)
             public override void OnUpdate(float realTimeDelta, float simulationTimeDelta)
             {
+                if (man.loading.loadingComplete && !m_initialized) init();
                 //update about once every 3 seconds at 60fps. 
                 numberofcalls++;
                 if (numberofcalls < 60 * 3) return;
@@ -77,119 +78,18 @@ namespace CSLStatsPanel
 
                 base.OnUpdate(realTimeDelta, simulationTimeDelta);
             }
-
-
-    }
-
-        public class StatisticsClassWrapper
-        {
-            public StatisticType m_st;
-            public string m_desc;
-            public decimal m_scale, m_multiplier;
-            public string m_scaledesc;
-            public string statstring;
-            public string category;
-
-            public StatisticsClassWrapper(string category, string description, StatisticType st, decimal scale, decimal multiplier, string scaledescription, int precision = 2)
-            {
-                this.category = category;
-                m_st = st;
-                m_desc = description;
-                m_scale = scale;
-                m_multiplier = multiplier;
-                m_scaledesc = scaledescription;
-                statstring = getstatstring(m_desc, m_st, m_multiplier, m_scale, m_scaledesc, precision);
-            }
-            public StatisticsClassWrapper(string category, string description, ImmaterialResourceManager.Resource st, decimal scale, decimal multiplier, string scaledescription, int precision = 2)
-            {
-                this.category = category;
-                //m_st = st;
-                m_desc = description;
-                m_scale = scale;
-                m_multiplier = multiplier;
-                m_scaledesc = scaledescription;
-                statstring = getstatstring(m_desc, st, m_multiplier, m_scale, m_scaledesc, precision);
-            }
-            public StatisticsClassWrapper(string category, string description)
-            {
-                this.category = category;
-                statstring = description;
-            }
-            public StatisticsClassWrapper(string category, string description, double value, int precision = 2, string suffix = "")
-            {
-                this.category = category;
-                m_desc = description;
-                statstring = description + ": " + Math.Round(value, precision).ToString() + suffix;
-
-            }
-
-            string getstatstring(string desc, ImmaterialResourceManager.Resource st,
-    decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int precision = 2)
-            {
-                //statlog.log(st);
-                try
-                {
-                    ImmaterialResourceManager im = Singleton<ImmaterialResourceManager>.instance;
-                    int outint=0;
-                    float total=0f;
-
-                    im.CheckTotalResource(st, out outint);
-                    total = outint;
-                    string strtotal = total.ToString();
-                    if (total > (float)scale)
-                    {
-                        total /= (float)scale;
-                        strtotal = Math.Round(total, precision).ToString() + scalestring;
-
-                    }
-                    return desc + ": " + strtotal + " ";
-                }
-                catch
-                {
-                    return desc + ": -1 ";
-                }
-            }
-
-            string getstatstring(string desc, StatisticType st,
-                decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int precision=2)
-            {
-                statlog.log(st);
-                try
-                {
-                    StatisticsManager sm = Singleton<StatisticsManager>.instance;
-                    StatisticBase sb = sm.Get(st);
-                    if (sb != null)
-                    {
-                        float total = (float)Math.Round(sb.GetLatestFloat() * (float)multiplier,precision);
-                        string strtotal = total.ToString();
-                        if (total > (float)scale)
-                        {
-                            total /= (float)scale;
-                            strtotal = Math.Round(total,precision).ToString() + scalestring;
-
-                        }
-                        return desc + ": " + strtotal + " ";
-                    }
-                    else return desc + ": N/A";
-                }
-                catch
-                {
-                    return desc + ": -1 ";
-                }
-            }
-
-
         }
+
     
-        public static class statlog
+    public static class statlog
         {
             public static void log(StatisticType st)
             {
                 log(st.ToString());
             }
 
-            static bool enablelogging = false;
-            static bool keeponlylastmessage = false;
+            public static bool enablelogging = false;
+            //static bool keeponlylastmessage = false;
             public static void log(string logtext)
             {
                 if (!enablelogging) return;
@@ -206,5 +106,7 @@ namespace CSLStatsPanel
                 //ModTools.Log.Message(logtext);
             }
         }
+
+
 }
 

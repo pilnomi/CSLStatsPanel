@@ -26,34 +26,65 @@ namespace CSLStatsPanel
             UIView uiView = GameObject.FindObjectOfType<UIView>();
             if (uiView == null) return;
 
-            myStatsWindowPanel = (CSLStatsMasterWindow)UIView.GetAView().AddUIComponent(typeof(CSLStatsMasterWindow));
-            myStatsWindowPanel.name = "CSLStatsMasterPanel";
+
+            var statButton = (UIButton)UIView.GetAView().AddUIComponent(typeof(UIButton));
+            statButton.width = 125;
+            statButton.height = 30;
+            statButton.normalBgSprite = "ButtonMenu";
+            statButton.hoveredBgSprite = "ButtonMenuHovered";
+            statButton.focusedBgSprite = "ButtonMenuFocused";
+            statButton.pressedBgSprite = "ButtonMenuPressed";
+            statButton.textColor = new Color32(186, 217, 238, 0);
+            statButton.disabledTextColor = new Color32(7, 7, 7, 255);
+            statButton.hoveredTextColor = new Color32(7, 132, 255, 255);
+            statButton.focusedTextColor = new Color32(255, 255, 255, 255);
+            statButton.pressedTextColor = new Color32(30, 30, 44, 255);
+            statButton.transformPosition = new Vector3(1.2f, -0.93f);
+            statButton.BringToFront();
+            statButton.text = "CSL Stats Panel";
+            statButton.eventClick += new MouseEventHandler(statButton_eventClick);
 
             initialized = true;
             running = false;
 
         }
+
+        
+        
+        static void statButton_eventClick(UIComponent component, UIMouseEventParameter eventParam)
+        {
+            if (myStatsWindowPanel == null)
+            {
+                UIView uiView = GameObject.FindObjectOfType<UIView>();
+                if (uiView == null) return;
+                myStatsWindowPanel = (CSLStatsMasterWindow)UIView.GetAView().AddUIComponent(typeof(CSLStatsMasterWindow));
+                myStatsWindowPanel.name = "CSLStatsMasterPanel";
+                updateText();
+            }
+            else
+            {
+                GameObject.Destroy(myStatsWindowPanel);
+                myStatsWindowPanel = null;
+            }
+        }
+
+
         public static void reset()
         {
+            GameObject.Destroy(myStatsWindowPanel);
             myStatsWindowPanel = null;
             initialized = false;
             running = false;
         }
 
-        public static void updateText(List<string> TextFields)
-        {
-            if (!initialized) return;
-            if (running) return;
-            running = true;
-            myStatsWindowPanel.updateText(TextFields);
-            running = false;
-        }
         public static void updateText()
         {
+            if (myStatsWindowPanel == null) return;
             if (!initialized) return;
             if (running) return;
             running = true;
-            myStatsWindowPanel.getstats2();
+            //myStatsWindowPanel.getstats2();
+            myStatsWindowPanel.updateText(MasterStatsWrapper.getstats3());
             running = false;
         }
     }
@@ -135,7 +166,12 @@ namespace CSLStatsPanel
         }
 
         public void updateText(List<string> s) { myStatsWindowPanel.updateText(s);}
-
+        public void updateText(List<StatisticsCategoryWrapper> l) 
+        { 
+            myStatsWindowPanel.updateText(l);
+            if (firstrun) setdefaultpos();
+            firstrun = false;
+        }
         protected override void OnSizeChanged()
         {
             
@@ -162,11 +198,7 @@ namespace CSLStatsPanel
         public void getstats2()
         {
             myStatsWindowPanel.getstats2();
-            if (firstrun)
-            {
-                setdefaultpos();
-                OnSizeChanged();
-            }
+            if (firstrun) setdefaultpos();
             firstrun = false;
         }
         
@@ -186,6 +218,11 @@ namespace CSLStatsPanel
         }
         protected override void OnMouseUp(UIMouseEventParameter p)
         {
+            if (dragging)
+            {
+                windowx.value = this.position.x; windowy.value = this.position.y;
+                windoww.value = this.width; windowh.value = this.height;
+            }
             dragging = false; resizing = false;
         }
 
@@ -215,12 +252,12 @@ namespace CSLStatsPanel
                 float wd = p.wheelDelta;
                 if (wd < 0)
                 {
-                    if (fontchange.value < minfontsize) return;
+                    if (fontchange.value <= minfontsize) return;
                     fontchange.value--;
                 }
                 if (wd > 0)
                 {
-                    if (fontchange.value > maxfontsize) return;
+                    if (fontchange.value >= maxfontsize) return;
                     fontchange.value++;
                 }
                 zooming = true;
@@ -296,6 +333,7 @@ namespace CSLStatsPanel
         public int mycount = 0;
         public bool m_issubpanel = false;
         public List<string> m_stringbuilder = new List<string>();
+        
         public Dictionary<string, CSLStatusWindowSubPanel> m_categories = new Dictionary<string, CSLStatusWindowSubPanel>();
         public List<CSLStatsPanelLabel> m_textfields = new List<CSLStatsPanelLabel>();
         bool firstrun = true;
@@ -331,6 +369,68 @@ namespace CSLStatsPanel
             init();
         }
 
+        public void updateText(List<StatisticsCategoryWrapper> categorydata)
+        {
+            statlog.log("update text catwrapper initialized=" + initialized.ToString() + " running=" + running.ToString());
+            if (!initialized) init();
+            if (!initialized) return;
+            if (running) return;
+            running = true;
+
+            statlog.log("reseting stringbuilders");
+            foreach (KeyValuePair<string, CSLStatusWindowSubPanel> p in m_categories)
+                p.Value.m_stringbuilder = new List<string>();
+
+            statlog.log("looping stats");
+            for (int i = 0; i < categorydata.Count(); i++)
+            {
+                string currentcat = categorydata[i].m_category;
+                if (string.IsNullOrEmpty(currentcat)) currentcat = "default";
+
+                if (!m_categories.Keys.Contains(currentcat))
+                {
+                    statlog.log("adding category " + currentcat);
+                    m_categories.Add(currentcat, (CSLStatusWindowSubPanel)this.AddUIComponent(typeof(CSLStatusWindowSubPanel)));
+                    //m_categories[currentcat].backgroundSprite = categorydata[i].m_sprite;
+
+                }
+
+                if (categorydata[i].capacityUsage > -1)
+                {
+                    if (categorydata[i].capacityUsage > .95)
+                        m_categories[currentcat].color = new Color32(255, 0, 0, 200); //red
+                    else if (categorydata[i].capacityUsage > .75)
+                        m_categories[currentcat].color = new Color32(255, 255, 0, 200); //yellow
+                    else m_categories[currentcat].color = new Color32(0, 255, 0, 200); //green
+                }
+
+                for (int c=0; c < categorydata[i].m_scwlist.Count(); c++)
+                {
+                    if (m_categories[currentcat].m_stringbuilder.Count() == 0)
+                        m_categories[currentcat].m_stringbuilder.Add(currentcat);
+
+                    m_categories[currentcat].m_stringbuilder.Add(categorydata[i].m_scwlist[c].statstring);
+                }
+            }
+
+            foreach (KeyValuePair<string, CSLStatusWindowSubPanel> p in m_categories)
+            {
+                statlog.log("calling updatetext on subpanel " + p.Key);
+                p.Value.updateText(p.Value.m_stringbuilder);
+                p.Value.m_stringbuilder = new List<string>();
+            }
+            if (firstrun && !m_issubpanel)
+            {
+                this.FitChildrenVertically();
+                this.FitChildrenHorizontally();
+                this.FitToContents();
+            }
+
+            firstrun = false;
+            running = false;
+        }
+
+
         public void updateText(List<StatisticsClassWrapper> TextFields)
         {
             statlog.log("update text scw initialized=" + initialized.ToString() + " running=" + running.ToString());
@@ -354,8 +454,10 @@ namespace CSLStatsPanel
                     m_categories.Add(currentcat, (CSLStatusWindowSubPanel)this.AddUIComponent(typeof(CSLStatusWindowSubPanel)));
                 }
 
-                if (m_categories[currentcat].m_stringbuilder.Count()==0)
+                if (m_categories[currentcat].m_stringbuilder.Count() == 0)
+                {
                     m_categories[currentcat].m_stringbuilder.Add(currentcat);
+                }
 
                 m_categories[currentcat].m_stringbuilder.Add(TextFields[i].statstring);
             }
@@ -581,14 +683,31 @@ namespace CSLStatsPanel
         }
     }
 
+    public class CSLStatsPanelItem : UIPanel
+    {
+         
+        public override void Start()
+        {
+            this.backgroundSprite = "GenericPanel";
+            this.autoSize = true;
+            this.color = new Color32(255, 255, 255, 200);
+        }
+
+        
+
+    }
     public class CSLStatsPanelLabel : UILabel
     {
+        public CSLStatsPanelLabel()
+        {
+            this.color = new Color32(1, 1, 1, 255);
+        }
         public override void Start()
         {
             this.backgroundSprite = "GenericLabel";
             this.autoSize = true;
             this.useDropShadow = false;
-            this.color = new Color32(255, 255, 255, 200);
+            this.color = new Color32(1, 1, 1, 255);
 
         }
 
