@@ -3,16 +3,5 @@ CSL Stats Panel
 
 Adds a move-able, resizable stats window to Cities Skylines.
 
-<img src="http://imgur.com/X17Wxok.png"  />
+See workshop page for latest updates: http://steamcommunity.com/sharedfiles/filedetails/?id=412708301
 
-TODO: allow resizing moving sub-panels
-
-TODO: minimize subpanels
-
-TODO: color code stats when deficient for needed coverage
-
-TODO: add toggle button to hide / show stats panel
-
-TODO: add small graphic icons for power, fire, police, etc
-
-TODO: "mini" mode - ala SC style resource bar
