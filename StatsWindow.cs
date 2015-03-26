@@ -49,7 +49,19 @@ namespace CSLStatsPanel
 
         }
 
-        
+        public static bool configChanged
+        {
+            get
+            {
+                if (!initialized) return false;
+                if (myStatsWindowPanel == null) return false;
+                return myStatsWindowPanel.configChanged;
+            }
+            set
+            {
+                myStatsWindowPanel.configChanged = value;
+            }
+        }
         
         static void statButton_eventClick(UIComponent component, UIMouseEventParameter eventParam)
         {
@@ -83,6 +95,7 @@ namespace CSLStatsPanel
             if (!initialized) return;
             if (running) return;
             running = true;
+            configChanged = false;
             //myStatsWindowPanel.getstats2();
             myStatsWindowPanel.updateText(CSLStatsPanelConfigSettings.Categories(true));
             running = false;
@@ -133,6 +146,13 @@ namespace CSLStatsPanel
         public void addConfigureButton()
         {
             if (configButton != null) this.RemoveUIComponent(configButton);
+            /*
+            UIScrollablePanel p = myresizepanel.AddUIComponent<UIScrollablePanel>();
+            p.autoLayout = true;
+            p.autoSize = true;
+            p.autoLayoutDirection = LayoutDirection.Horizontal;
+            p.autoLayoutStart = LayoutStart.TopLeft;
+            */
             configButton = (UIButton)myresizepanel.AddUIComponent(typeof(UIButton));
             configButton.width = 125;
             configButton.height = 20;
@@ -150,7 +170,14 @@ namespace CSLStatsPanel
             configButton.BringToFront();
             configButton.text = "Configure";
             configButton.eventClick += new MouseEventHandler(configButton_eventClick);
+                
             
+            //p.FitChildrenHorizontally();
+            //p.FitChildrenVertically();
+            //p.FitToContents();
+
+            
+            myresizepanel.FitChildrenVertically();
             
         }
 
@@ -210,8 +237,10 @@ namespace CSLStatsPanel
             }
         }
 
+        public bool configChanged = false;
         void myconfigwindow_eventStatsConfigChanged(object sender, EventArgs e)
         {
+            configChanged = true;
             resetStatsWindow();
         }
 
@@ -265,6 +294,9 @@ namespace CSLStatsPanel
             //this.FitChildrenVertically();
             //this.FitChildrenHorizontally();
 
+
+  
+            
         }
        
         protected override void OnMouseDown(UIMouseEventParameter p)
@@ -452,7 +484,7 @@ namespace CSLStatsPanel
 
                 }
 
-                if (categorydata[i].capacityUsage > -1)
+                if (categorydata[i].capacityUsage > -1 && CSLStatsPanelConfigSettings.m_EnablePanelColors.value)
                 {
                     if (categorydata[i].capacityUsage > .95)
                         m_categories[currentcat].color = new Color32(255, 0, 0, 200); //red
@@ -464,10 +496,33 @@ namespace CSLStatsPanel
                 List<StatisticsClassWrapper> myscwlist = categorydata[i].activeStats;
                 for (int c = 0; c < myscwlist.Count(); c++)
                 {
-                    if (m_categories[currentcat].m_stringbuilder.Count() == 0)
-                        m_categories[currentcat].m_stringbuilder.Add(currentcat);
+                    if (!CSLStatsPanelConfigSettings.m_MiniMode.value)
+                    {
+                        if (m_categories[currentcat].m_stringbuilder.Count() == 0)
+                            m_categories[currentcat].m_stringbuilder.Add(currentcat
+                                + ((CSLStatsPanelConfigSettings.m_EnablePanelSummaries.value && categorydata[i].m_showstatsummary && categorydata[i].capacityUsage > -1) ? " - " + Math.Round(categorydata[i].capacityUsage * 100, 0).ToString() + "%" : ""));
 
-                    m_categories[currentcat].m_stringbuilder.Add(myscwlist[c].statstring);
+
+                        m_categories[currentcat].m_stringbuilder.Add(myscwlist[c].statstring);
+                    }
+                    else
+                    {
+                        if (m_categories[currentcat].m_stringbuilder.Count() == 0)
+                        {
+                            if (categorydata[i].m_showstatsummary && categorydata[i].capacityUsage > -1)
+                            {
+                                m_categories[currentcat].m_stringbuilder.Add(currentcat
+                                    + ((categorydata[i].m_showstatsummary && categorydata[i].capacityUsage > -1) ? " - " + Math.Round(categorydata[i].capacityUsage * 100, 0).ToString() + "%" : ""));
+                            }
+                            else if (myscwlist.Count() > 0)
+                            {
+                                m_categories[currentcat].m_stringbuilder.Add(currentcat
+                                    + " - " + Math.Round(myscwlist[0].m_value,0) + myscwlist[0].m_scaledesc );
+
+                            }
+                        }
+                        
+                    }
                 }
             }
 

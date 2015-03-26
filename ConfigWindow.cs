@@ -19,23 +19,20 @@ namespace CSLStatsPanel
         public ConfigWindow()
         {
 
-   
-
-        }
-
-        public override void Start()
-        {
-            base.Start();
-
             this.color = new Color32(0, 0, 255, 200);
             this.backgroundSprite = "GenericPanel";
             this.autoLayoutDirection = LayoutDirection.Vertical;
             this.autoLayoutStart = LayoutStart.TopLeft;
             this.autoLayout = true;
             this.autoLayoutPadding = new RectOffset(0, 0, 0, 0);
+            this.width = 1000;
+            this.height = 650;
+   
 
+        }
 
-            //this.CenterToParent();
+        public override void Start()
+        {
 
             headerpanel = (UIPanel)this.AddUIComponent(typeof(UIPanel));
             headerpanel.height = 20;
@@ -47,6 +44,7 @@ namespace CSLStatsPanel
             headertext.CenterToParent();
 
             myConfigWindowPanel = (ConfigSettingsWindow)this.AddUIComponent(typeof(ConfigSettingsWindow));
+            myConfigWindowPanel.width = this.width;
             myConfigWindowPanel.name = "CSLStatsConfigurationPanel";
             myConfigWindowPanel.color = new Color32(0, 0, 255, 200);
             myConfigWindowPanel.eventStatsConfigChanged += new ConfigSettingsWindow.eventStatsConfigChangedHandler(myConfigWindowPanel_eventStatsConfigChanged);
@@ -58,8 +56,6 @@ namespace CSLStatsPanel
             //myresizepanel.anchor = UIAnchorStyle.Bottom;
             //myresizepanel.anchor = UIAnchorStyle.Right;
             //resizelabel = myresizepanel.AddUIComponent<UILabel>();
-            
-
 
 
             var CloseButton = (UIButton)myresizepanel.AddUIComponent(typeof(UIButton));
@@ -75,16 +71,17 @@ namespace CSLStatsPanel
             CloseButton.focusedTextColor = new Color32(255, 255, 255, 255);
             CloseButton.pressedTextColor = new Color32(30, 30, 44, 255);
             CloseButton.color = new Color32(CloseButton.color.r, CloseButton.color.g, CloseButton.color.b, 255);
+            
             //CloseButton.transformPosition = new Vector3(1.2f, -0.93f);
             CloseButton.BringToFront();
             CloseButton.text = "Close";
             CloseButton.eventClick += new MouseEventHandler(CloseButton_eventClick);
 
-            //this.width = 700;
-            //this.height = 400;
-            this.autoSize = true;
-            this.FitToContents();
+            myresizepanel.FitChildrenVertically();
             this.CenterToParent();
+
+            base.Start();
+            OnSizeChanged();
         }
 
         public void myConfigWindowPanel_eventStatsConfigChanged(object sender, EventArgs e)
@@ -93,6 +90,8 @@ namespace CSLStatsPanel
         }
         public delegate void eventStatsConfigChangedHandler(object sender, EventArgs e);
         public event eventStatsConfigChangedHandler eventStatsConfigChanged;
+
+
 
 
         void CloseButton_eventClick(UIComponent component, UIMouseEventParameter eventParam)
@@ -131,7 +130,17 @@ namespace CSLStatsPanel
             //resizelabel.CenterToParent();
             headertext.CenterToParent();
 
+            UIScrollablePanel[] mypanels = myConfigWindowPanel.catpanels.ToArray();
+            for (int i = 0; i < mypanels.Count(); i++) 
+            {
+                mypanels[i].width = myConfigWindowPanel.width - 15;
+               // mypanels[i].FitToContents();
+                mypanels[i].FitChildrenVertically();
             
+            }
+
+        
+
         }
 
     }
@@ -139,23 +148,26 @@ namespace CSLStatsPanel
     class ConfigSettingsWindow : UIScrollablePanel
     {
         UITextField refreshInterval;
-        public ConfigSettingsWindow()
+        public List<UIScrollablePanel> catpanels = new List<UIScrollablePanel>();
+        public override void Start()
         {
+            base.Start();
             this.color = new Color32(0, 0, 255, 200);
             this.backgroundSprite = "GenericPanel";
             this.autoLayoutDirection = LayoutDirection.Vertical;
             this.autoLayoutStart = LayoutStart.TopLeft;
-            this.autoLayoutPadding = new RectOffset(0, 0, 0, 0);
+            this.autoLayoutPadding = new RectOffset(5, 5, 5,5);
             this.autoLayout = true;
             this.clipChildren = true;
 
-      
+
 
             drawstatsconfig();
-            this.FitChildrenVertically();
-            this.FitToContents();
+            //this.FitChildrenVertically();
+            //this.FitChildrenHorizontally();
+            //this.FitToContents();
         }
-
+ 
         void refreshInterval_eventLeaveFocus(UIComponent component, UIFocusEventParameter eventParam)
         {
             int t = 1;
@@ -173,7 +185,7 @@ namespace CSLStatsPanel
 
 
             UIScrollablePanel p = this.AddUIComponent<UIScrollablePanel>();
-            p.width = this.width;
+            //p.width = this.width;
             //p.height = 40;
             p.autoLayoutDirection = LayoutDirection.Horizontal;
             p.autoLayout = true;
@@ -187,20 +199,97 @@ namespace CSLStatsPanel
             refreshInterval.numericalOnly = true;
             refreshInterval.eventLeaveFocus += new FocusEventHandler(refreshInterval_eventLeaveFocus);
 
-            UILabel decrementLabel = p.AddUIComponent<UILabel>();
+            UIButton decrementLabel = p.AddUIComponent<UIButton>();
+            setcommonbuttonprops(decrementLabel);
+            decrementLabel.width = 5;
             decrementLabel.text = "-";
             decrementLabel.eventClick += new MouseEventHandler(decrementLabel_eventClick);
-            UILabel incrementLabel = p.AddUIComponent<UILabel>();
+            UIButton incrementLabel = p.AddUIComponent<UIButton>();
+            setcommonbuttonprops(incrementLabel);
+            incrementLabel.width = 5;
             incrementLabel.text = "+";
             incrementLabel.eventClick += new MouseEventHandler(incrementLabel_eventClick);
+
+
             p.FitChildrenHorizontally();
             p.FitToContents();
+
+            p = this.AddUIComponent<UIScrollablePanel>();
+            //p.width = this.width;
+            //p.height = 40;
+            p.autoLayoutPadding = new RectOffset(5, 5, 5, 5);
+            p.autoLayoutDirection = LayoutDirection.Horizontal;
+            p.autoLayout = true;
+
+            useColors = p.AddUIComponent<UIButton>();
+            setcommonbuttonprops(useColors);
+            useColors.text = "Use Panel Colors";
+            useColors.eventClick += new MouseEventHandler(useColors_eventClick);
+            useColors.textColor = (CSLStatsPanelConfigSettings.m_EnablePanelColors.value) ? selectedcolor : deselectedcolor;
+
+            UIButton displaySummaries = p.AddUIComponent<UIButton>();
+            setcommonbuttonprops(displaySummaries);
+            displaySummaries.text = "% Summaries";
+            displaySummaries.textColor = (CSLStatsPanelConfigSettings.m_EnablePanelSummaries.value) ? selectedcolor : deselectedcolor;
+            displaySummaries.eventClick += new MouseEventHandler(displaySummaries_eventClick);
+
+            UIButton miniMode = p.AddUIComponent<UIButton>();
+            setcommonbuttonprops(miniMode);
+            miniMode.text = "Mini-Mode";
+            miniMode.textColor = (CSLStatsPanelConfigSettings.m_MiniMode.value) ? selectedcolor : deselectedcolor;
+            miniMode.eventClick += new MouseEventHandler(miniMode_eventClick);
+
+            p.FitChildrenHorizontally();
+            p.FitToContents();
+
 
             List<StatisticsCategoryWrapper> scw = CSLStatsPanelConfigSettings.Categories(false);
             for (int i = 0; i < scw.Count(); i++)
             {
                 drawstatsconfigpanel(scw[i]);
             }
+        }
+
+        private void setcommonbuttonprops(UIButton b)
+        {
+            b.normalFgSprite = "ButtonMenu";
+            b.width = 125;
+            b.height = 20;
+            b.normalBgSprite = "ButtonMenu";
+            b.hoveredBgSprite = "ButtonMenuHovered";
+            b.focusedBgSprite = "ButtonMenuFocused";
+            b.pressedBgSprite = "ButtonMenuPressed";
+            b.disabledTextColor = new Color32(7, 7, 7, 255);
+            b.hoveredTextColor = new Color32(7, 132, 255, 255);
+        }
+
+        void miniMode_eventClick(UIComponent component, UIMouseEventParameter eventParam)
+        {
+            CSLStatsPanelConfigSettings.m_MiniMode.value = !CSLStatsPanelConfigSettings.m_MiniMode.value;
+            UIButton b = (UIButton)component;
+            b.textColor = (CSLStatsPanelConfigSettings.m_MiniMode.value) ? selectedcolor : deselectedcolor;
+            b.focusedColor = (CSLStatsPanelConfigSettings.m_MiniMode.value) ? selectedcolor : deselectedcolor;
+            b.parent.Focus();
+            eventStatsConfigChanged(this, EventArgs.Empty);
+        }
+
+        void displaySummaries_eventClick(UIComponent component, UIMouseEventParameter eventParam)
+        {
+            CSLStatsPanelConfigSettings.m_EnablePanelSummaries.value = !CSLStatsPanelConfigSettings.m_EnablePanelSummaries.value;
+            UIButton b = (UIButton)component;
+            b.textColor = (CSLStatsPanelConfigSettings.m_EnablePanelSummaries.value) ? selectedcolor : deselectedcolor;
+            b.focusedColor = (CSLStatsPanelConfigSettings.m_EnablePanelSummaries.value) ? selectedcolor : deselectedcolor;
+            b.parent.Focus();
+            eventStatsConfigChanged(this, EventArgs.Empty);
+        }
+        UIButton useColors;
+        void useColors_eventClick(UIComponent component, UIMouseEventParameter eventParam)
+        {
+            CSLStatsPanelConfigSettings.m_EnablePanelColors.value = !CSLStatsPanelConfigSettings.m_EnablePanelColors.value;
+            useColors.textColor = (CSLStatsPanelConfigSettings.m_EnablePanelColors) ? selectedcolor : deselectedcolor;
+            useColors.focusedColor = (CSLStatsPanelConfigSettings.m_EnablePanelColors) ? selectedcolor : deselectedcolor;
+            useColors.parent.Focus();
+            eventStatsConfigChanged(this, EventArgs.Empty);
         }
 
         void incrementLabel_eventClick(UIComponent component, UIMouseEventParameter eventParam)
@@ -216,72 +305,85 @@ namespace CSLStatsPanel
             
         }
 
-        UIPanel drawstatsconfigpanel(StatisticsCategoryWrapper scw)
+        UIScrollablePanel drawstatsconfigpanel(StatisticsCategoryWrapper scw)
         {
-            UIPanel p = this.AddUIComponent<UIPanel>();
-            p.backgroundSprite = "GenericPanel";
+            //UIScrollablePanel p = this.AddUIComponent<UIScrollablePanel>();
+            //p.backgroundSprite = "GenericPanel";
             
-            p.width = this.width;
+            //p.width = this.width;
             //p.height = 40;
-            p.autoLayoutDirection = LayoutDirection.Vertical;
-            p.autoLayout = true;
+            //p.autoLayoutDirection = LayoutDirection.Vertical;
+            //p.autoLayout = true;
 
 
 
-            UIScrollablePanel catsubpanel = p.AddUIComponent<UIScrollablePanel>();
+            UIScrollablePanel catsubpanel = this.AddUIComponent<UIScrollablePanel>();
+            catpanels.Add(catsubpanel);
             catsubpanel.autoLayout = true;
+            catsubpanel.wrapLayout = true;
             catsubpanel.autoLayoutDirection = LayoutDirection.Horizontal;
-            catsubpanel.width = p.width;
+            catsubpanel.width = this.width - 5;
             catsubpanel.backgroundSprite = "GenericPanel";
-            catsubpanel.height = 15;
-            catsubpanel.autoLayoutPadding = new RectOffset(5, 5, 5, 5);
-            UILabel catname = catsubpanel.AddUIComponent<UILabel>();
+            //catsubpanel.height = 15;
+            catsubpanel.autoLayoutPadding = new RectOffset(3, 3, 3, 3);
+            
+            bool catisChecked = CSLStatsPanelConfigSettings.isCatActive(scw.m_category);
+            UIButton catname = catsubpanel.AddUIComponent<UIButton>();
+            catname.textColor = (catisChecked) ? selectedcolor : deselectedcolor;
+            setcommonbuttonprops(catname);
             catname.autoSize = true;
             catname.text = scw.m_category;
             catname.name = scw.m_category;
-            bool catisChecked = CSLStatsPanelConfigSettings.isCatActive(scw.m_category);
             catsubpanel.color = (catisChecked) ? selectedcolor : deselectedcolor;
                 
-            catsubpanel.FitChildrenHorizontally();
             catsubpanel.autoSize = true;
             catname.eventClick += new MouseEventHandler(catsubpanel_eventClick);
 
             //mypanels = new Dictionary<string, UIScrollablePanel>();
             for (int x = 0; x < scw.m_scwlist.Count(); x++)
             {
-                UIScrollablePanel statsubpanel = catsubpanel.AddUIComponent<UIScrollablePanel>();
-                statsubpanel.backgroundSprite = "GenericPanel";
-                //statsubpanel.height = 15;
-                statsubpanel.autoLayout = true;
-                statsubpanel.autoSize = true;
-                statsubpanel.autoLayoutDirection = LayoutDirection.Horizontal;
-                statsubpanel.width = p.width;
+                //UIScrollablePanel statsubpanel = catsubpanel.AddUIComponent<UIScrollablePanel>();
+                //statsubpanel.backgroundSprite = "GenericPanel";
+                //statsubpanel.autoLayout = true;
+                //statsubpanel.autoSize = true;
+                //statsubpanel.autoLayoutDirection = LayoutDirection.Horizontal;
+                //statsubpanel.width = p.width;
                 bool isStatActive = CSLStatsPanelConfigSettings.isStatActive(scw.m_category, scw.m_scwlist[x].m_desc);
-                statsubpanel.name = scw.m_category + "|" + scw.m_scwlist[x].m_desc;
-                
-                statsubpanel.color = (isStatActive) ? selectedcolor : deselectedcolor;
-                statsubpanel.eventClick += new MouseEventHandler(statsubpanel_eventClick);
-                UILabel statname = statsubpanel.AddUIComponent<UILabel>();
+                UIButton statname = catsubpanel.AddUIComponent<UIButton>();
+                statname.name = scw.m_category + "|" + scw.m_scwlist[x].m_desc;
+
+                statname.color = (isStatActive) ? selectedcolor : deselectedcolor;
+                statname.textColor = (isStatActive) ? selectedcolor : deselectedcolor;
+                setcommonbuttonprops(statname);
                 statname.text = scw.m_scwlist[x].m_desc;
+                statname.eventClick += new MouseEventHandler(statsubpanel_eventClick);
                 //mypanels.Add(scw.m_scwlist[x].m_desc, statsubpanel);
-                
-                statsubpanel.FitChildrenHorizontally();
-                statsubpanel.FitToContents();
+
+                //statsubpanel.FitToContents();
+                //statsubpanel.FitChildrenHorizontally();
             }
-            catsubpanel.FitChildrenHorizontally();
-            catsubpanel.FitToContents();
-            p.FitChildrenVertically();
+            catsubpanel.FitChildrenVertically();
+            //catsubpanel.FitToContents();
+            
+            //p.FitChildrenVertically();
 
             
-            return p;
+            return catsubpanel;
         }
 
         void catsubpanel_eventClick(UIComponent component, UIMouseEventParameter eventParam)
         {
             bool isCatActive = !CSLStatsPanelConfigSettings.isCatActive(component.name);
             CSLStatsPanelConfigSettings.setCatActive(component.name, isCatActive);
+
+            UIButton b = (UIButton)component;
+            b.textColor = (isCatActive) ? selectedcolor : deselectedcolor;
+            b.focusedColor = (isCatActive) ? selectedcolor : deselectedcolor;
+            b.parent.Focus();
+
             component.color = (isCatActive) ? selectedcolor : deselectedcolor;
             component.parent.color = component.color;
+
             eventStatsConfigChanged(this, EventArgs.Empty);
         }
         public delegate void eventStatsConfigChangedHandler(object sender, EventArgs e);
@@ -290,13 +392,19 @@ namespace CSLStatsPanel
         Color32 selectedcolor = new Color32(0, 255, 0, 255),
             deselectedcolor = new Color32(255, 0, 0, 255);
 
-        Dictionary<string, UIPanel> mypanels = new Dictionary<string, UIPanel>();
         void statsubpanel_eventClick(UIComponent component, UIMouseEventParameter eventParam)
         {
             string[] mystring = component.name.Split('|');
             bool isStatActive = !CSLStatsPanelConfigSettings.isStatActive(mystring[0], mystring[1]);
             CSLStatsPanelConfigSettings.setStatActive(mystring[0], mystring[1], isStatActive);
+
+            UIButton b = (UIButton)component;
+            b.textColor = (isStatActive) ? selectedcolor : deselectedcolor;
+            b.focusedColor = (isStatActive) ? selectedcolor : deselectedcolor;
+            b.parent.Focus();
+
             component.color = (isStatActive) ? selectedcolor : deselectedcolor;
+            //component.parent.color = component.color;
             eventStatsConfigChanged(this, EventArgs.Empty);
 
         }
@@ -350,6 +458,10 @@ namespace CSLStatsPanel
         public const string m_settingsprefix = "MODCSLStatsPanelConfig_";
         public const int m_minRefreshRate = 1, m_maxRefreshRate=255;
 
+        public static SavedBool m_MiniMode = new SavedBool(m_settingsprefix + "EnableMiniMode", Settings.gameSettingsFile, false, true);
+        
+        public static SavedBool m_EnablePanelColors = new SavedBool(m_settingsprefix + "EnablePanelColors", Settings.gameSettingsFile, true, true);
+        public static SavedBool m_EnablePanelSummaries = new SavedBool(m_settingsprefix + "EnablePanelSummaries", Settings.gameSettingsFile, true, true);
         private static SavedInt m_PanelRefreshRate = new SavedInt(m_settingsprefix + "RefreshRate", Settings.gameSettingsFile, 3, true);
         public static int PanelRefreshRate
         {

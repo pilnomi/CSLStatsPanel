@@ -64,7 +64,10 @@ namespace CSLStatsPanel
                 if (man.loading.loadingComplete && !m_initialized) init();
                 //update about once every 3 seconds at 60fps. 
                 numberofcalls++;
-                if (numberofcalls < 60 * CSLStatsPanelConfigSettings.PanelRefreshRate) return;
+                int myrefreshrate = CSLStatsPanelConfigSettings.PanelRefreshRate;
+                //if (StatusWindowInterface.configChanged) myrefreshrate = 1; // temporarily change update rate to 1sec after config change
+                //if (StatusWindowInterface.running) return;
+                if (numberofcalls < 60 * myrefreshrate) return;
                 numberofcalls = 0;
                 if (man.loading.loadingComplete & m_initialized)
                 {

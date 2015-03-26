@@ -1,4 +1,7 @@
-﻿using ColossalFramework;
+﻿using System.Globalization;
+using ColossalFramework;
+using ColossalFramework.Globalization;
+using ColossalFramework.UI;
 using ICities;
 using System;
 using System.Collections.Generic;
@@ -17,10 +20,12 @@ namespace CSLStatsPanel
         public float m_resourcecapacityliteral = -1f, m_resourceusedliteral = -1f;
         public string m_sprite = "GenericPanel";
         private int m_resourceusedindex = -1, m_resourcecapacityindex = -1;
+        public bool m_showstatsummary = false;
 
         public StatisticsCategoryWrapper(string category, List<StatisticsClassWrapper> scwlist,
-            string resourceusedfield, string resourcecapacityfield, string sprite = "GenericPanel")
+            string resourceusedfield, string resourcecapacityfield, string sprite = "GenericPanel", bool showstatsummary = false)
         {
+            m_showstatsummary = showstatsummary;
             m_scwlist = scwlist;
             m_category = category;
             m_resourcecapacityfield = resourcecapacityfield;
@@ -278,7 +283,7 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
             {
                 statstopull.Add(new StatisticsClassWrapper(cat, "Used", ds.dmusage / 1000, 2, "MW"));
                 statstopull.Add(new StatisticsClassWrapper(cat, "Capacity", StatisticType.ElectricityCapacity, 1000, 16, "MW"));
-                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, ds.dmusage.ToString(), "Capacity", "ToolbarIconElectricity"));
+                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, ds.dmusage.ToString(), "Capacity", "ToolbarIconElectricity", true));
                 statstopull = new List<StatisticsClassWrapper>();
             }
 
@@ -288,7 +293,7 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                 statstopull.Add(new StatisticsClassWrapper(cat, "Used", ds.waterbuffer, 2, "m³"));
                 statstopull.Add(new StatisticsClassWrapper(cat, "Capacity", StatisticType.WaterCapacity, 1, 16, "m³"));
                 statstopull.Add(new StatisticsClassWrapper(cat, "Pollution", StatisticType.WaterPollution, 1, 1, "%"));
-                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Used", "Capacity"));
+                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Used", "Capacity", "GenericPanel", true));
                 statstopull = new List<StatisticsClassWrapper>();
             }
 
@@ -297,7 +302,7 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
             {
                 statstopull.Add(new StatisticsClassWrapper(cat, "Used", ds.sewagebuffer, 2, "m³"));
                 statstopull.Add(new StatisticsClassWrapper(cat, "Capacity", StatisticType.SewageCapacity, 1, 16, "m³"));
-                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Used", "Capacity"));
+                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Used", "Capacity", "GenericPanel", true));
                 statstopull = new List<StatisticsClassWrapper>();
             }
 
@@ -315,7 +320,7 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                 totalcapacity += (int)statstopull.Last().m_value;
                 statstopull.Add(new StatisticsClassWrapper(cat, "Total Capacity", totalcapacity));
                 statstopull.Add(new StatisticsClassWrapper(cat, "Piles", StatisticType.GarbagePiles, 1000, 1, "M"));
-                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Total Inflow", "Total Capacity"));
+                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Total Inflow", "Total Capacity", "GenericPanel", true));
                 statstopull = new List<StatisticsClassWrapper>();
             }
 
@@ -339,9 +344,10 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                 statstopull.Add(new StatisticsClassWrapper(cat, "Amount", StatisticType.DeadAmount, 1, 1, ""));
                 statstopull.Add(new StatisticsClassWrapper(cat, "Capacity", StatisticType.DeadCapacity, 1, 1, ""));
                 statstopull.Add(new StatisticsClassWrapper(cat, "Cremate Capacity", StatisticType.CremateCapacity, 1000, 1, "K"));
+                
                 if (statstopull.Last().m_value > 0)
-                    catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Amount", "Cremate Capacity"));
-                else catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Amount", "Capacity"));
+                    catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Amount", "Cremate Capacity", "GenericPanel", true));
+                else catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Amount", "Capacity", "GenericPanel", true));
                 statstopull = new List<StatisticsClassWrapper>();
             }
 
@@ -353,12 +359,12 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                 catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Abandoned", (bs.buildingcount * .25).ToString()));
                 statstopull = new List<StatisticsClassWrapper>();
             }
-
+            
             cat = "Fire";
             //if (CSLStatsPanelConfigSettings.isCatActive(cat))
             {
-                statstopull.Add(new StatisticsClassWrapper(cat, "Buildings Burning", bs.onfire, 2, ""));
                 statstopull.Add(new StatisticsClassWrapper(cat, "Hazard", ImmaterialResourceManager.Resource.FireHazard, 1, 1, "%"));
+                statstopull.Add(new StatisticsClassWrapper(cat, "Buildings Burning", bs.onfire, 2, ""));
                 catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Hazard", "50"));
                 statstopull = new List<StatisticsClassWrapper>();
             }
@@ -368,6 +374,18 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
             cat = "Economy";
             //if (CSLStatsPanelConfigSettings.isCatActive(cat))
             {
+                if (!pollsinitialized) InitializePolls();
+                //UpdateIncomeExpenses();
+                double myincome = 0;
+                basicIncomePolls[0].Poll(Settings.moneyFormat, LocaleManager.cultureInfo);
+                myincome += basicIncomePolls[0].income;
+                    
+                StatisticsClassWrapper tempscw = new StatisticsClassWrapper(cat, "Service Expenses", StatisticType.ServiceExpenses, 1, 1, "");
+                int servicesexpenses = (int)tempscw.m_value / 100;
+                tempscw = new StatisticsClassWrapper(cat, "Income", myincome);
+                int servicesincome = (int)tempscw.m_value / 100;
+                
+                statstopull.Add(new StatisticsClassWrapper(cat, "Budget", servicesincome - servicesexpenses));
                 statstopull.Add(new StatisticsClassWrapper(cat, "Entertainment", ImmaterialResourceManager.Resource.Entertainment, 1, 1, ""));
                 statstopull.Add(new StatisticsClassWrapper(cat, "Attractiveness", ImmaterialResourceManager.Resource.Attractiveness, 1, 1, ""));
                 statstopull.Add(new StatisticsClassWrapper(cat, "Cargo Transport", ImmaterialResourceManager.Resource.CargoTransport, 1, 1, ""));
@@ -376,7 +394,7 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                 statstopull.Add(new StatisticsClassWrapper(cat, "Land Value", ImmaterialResourceManager.Resource.LandValue, 1, 1, "₡/m²"));
                 statstopull.Add(new StatisticsClassWrapper(cat, "ImmaterialResource", StatisticType.ImmaterialResource, 1000, 1, "M"));
                 statstopull.Add(new StatisticsClassWrapper(cat, "Goods Produced", StatisticType.GoodsProduced, 1000, 1, "K"));
-                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "", ""));
+                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, servicesexpenses.ToString(), servicesincome.ToString()));
                 statstopull = new List<StatisticsClassWrapper>();
             }
 
@@ -401,7 +419,7 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                 statstopull.Add(new StatisticsClassWrapper(cat, "Educated", StatisticType.EducatedCount, 1, 1, ""));
                 statstopull.Add(new StatisticsClassWrapper(cat, "Students", StatisticType.StudentCount, 1, 1, ""));
                 statstopull.Add(new StatisticsClassWrapper(cat, "Max Students", StatisticType.EducationCapacity, 1, 1, ""));
-                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Students", "Max Students"));
+                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Students", "Max Students", "GenericPanel", true));
                 statstopull = new List<StatisticsClassWrapper>();
             }
 
@@ -409,8 +427,8 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
             //if (CSLStatsPanelConfigSettings.isCatActive(cat))
             {
 
-                statstopull.Add(new StatisticsClassWrapper(cat, "Crimes", StatisticType.CrimeRate, 1, 1, ""));
                 statstopull.Add(new StatisticsClassWrapper(cat, "Crime Rate", ds.finalcrimerate, 2, "%"));
+                statstopull.Add(new StatisticsClassWrapper(cat, "Crimes", StatisticType.CrimeRate, 1, 1, ""));
                 catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Crime Rate", "20"));
                 statstopull = new List<StatisticsClassWrapper>();
             }
@@ -429,8 +447,8 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
             //if (CSLStatsPanelConfigSettings.isCatActive(cat))
             {
 
-                statstopull.Add(new StatisticsClassWrapper(cat, "Avg Passengers", StatisticType.AveragePassengers, 1, 1, ""));
                 statstopull.Add(new StatisticsClassWrapper(cat, "Availability", ImmaterialResourceManager.Resource.PublicTransport, 1, 1, "%"));
+                statstopull.Add(new StatisticsClassWrapper(cat, "Avg Passengers", StatisticType.AveragePassengers, 1, 1, ""));
                 catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "80", "Availability"));
                 statstopull = new List<StatisticsClassWrapper>();
             }
@@ -445,6 +463,273 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
             }
 
             return catstopull;
+        }
+
+        private static IncomeExpensesPoll[] basicExpensesPolls;
+        private static IncomeExpensesPoll[] basicIncomePolls;
+        private static IncomeExpensesPoll[] residentialDetailIncomePolls;
+        private static IncomeExpensesPoll[] residentialLowDetailIncomePolls;
+        private static IncomeExpensesPoll[] residentialHighDetailIncomePolls;
+        private static IncomeExpensesPoll[] publicTransportDetailIncomePolls;
+        private static IncomeExpensesPoll[] publicTransportDetailExpensesPolls;
+        private static IncomeExpensesPoll[] commercialDetailIncomePolls;
+        private static IncomeExpensesPoll[] commercialLowDetailIncomePolls;
+        private static IncomeExpensesPoll[] commercialHighDetailIncomePolls;
+        private static IncomeExpensesPoll[] industrialDetailIncomePolls;
+        private static IncomeExpensesPoll[] officeDetailIncomePolls;
+        private static IncomeExpensesPoll[] budgetExpensesPolls;
+
+        private static void InitializePolls()
+        {
+            basicExpensesPolls = new IncomeExpensesPoll[]
+		    {
+			    new IncomeExpensesPoll(ItemClass.Service.Road, null, "RoadsTotal"),
+			    new IncomeExpensesPoll(ItemClass.Service.Electricity, null, "ElectricityTotal"),
+			    new IncomeExpensesPoll(ItemClass.Service.Water, null, "WaterTotal"),
+			    new IncomeExpensesPoll(ItemClass.Service.Garbage, null, "GarbageTotal"),
+			    new IncomeExpensesPoll(ItemClass.Service.HealthCare, null, "HealthcareTotal"),
+			    new IncomeExpensesPoll(ItemClass.Service.FireDepartment, null, "FireDepartmentTotal"),
+			    new IncomeExpensesPoll(ItemClass.Service.PoliceDepartment, null, "PoliceDepartmentTotal"),
+			    new IncomeExpensesPoll(ItemClass.Service.Education, null, "EducationTotal"),
+			    new IncomeExpensesPoll(ItemClass.Service.Monument, null, "MonumentsTotal"),
+			    new IncomeExpensesPoll(ItemClass.Service.Beautification, null, "ParksTotal")
+		    };
+            basicIncomePolls = new IncomeExpensesPoll[]
+		    {
+			    new IncomeExpensesPoll(ItemClass.Service.None, "IncomeTotal", "ExpensesTotal"),
+			    new IncomeExpensesPoll(ItemClass.Service.Residential, "IncomeResidentialTotal", null),
+			    new IncomeExpensesPoll(ItemClass.Service.Commercial, "IncomeCommercialTotal", null),
+			    new IncomeExpensesPoll(ItemClass.Service.Industrial, "IncomeIndustrialTotal", null),
+			    new IncomeExpensesPoll(ItemClass.Service.Office, "IncomeOfficeTotal", null),
+			    new IncomeExpensesPoll(ItemClass.Service.PublicTransport, "IncomePublicTransportTotal", "PublicTransportTotal"),
+			    new IncomeExpensesPoll(ItemClass.Service.Residential, ItemClass.SubService.ResidentialLow, "IncomeResidentialLow", null),
+			    new IncomeExpensesPoll(ItemClass.Service.Residential, ItemClass.SubService.ResidentialHigh, "IncomeResidentialHigh", null),
+			    new IncomeExpensesPoll(ItemClass.Service.Commercial, ItemClass.SubService.CommercialLow, "IncomeCommercialLow", null),
+			    new IncomeExpensesPoll(ItemClass.Service.Commercial, ItemClass.SubService.CommercialHigh, "IncomeCommercialHigh", null),
+			    new IncomeExpensesPoll(ItemClass.Service.Tourism, "IncomeCommercialTourist", null),
+			    new IncomeExpensesPoll(ItemClass.Service.Citizen, "IncomeCommercialCitizen", null)
+		    };
+            residentialDetailIncomePolls = new IncomeExpensesPoll[]
+		    {
+			    new IncomeExpensesPoll(ItemClass.Service.Residential, ItemClass.SubService.None, ItemClass.Level.Level1, "L1", null),
+			    new IncomeExpensesPoll(ItemClass.Service.Residential, ItemClass.SubService.None, ItemClass.Level.Level2, "L2", null),
+			    new IncomeExpensesPoll(ItemClass.Service.Residential, ItemClass.SubService.None, ItemClass.Level.Level3, "L3", null),
+			    new IncomeExpensesPoll(ItemClass.Service.Residential, ItemClass.SubService.None, ItemClass.Level.Level4, "L4", null),
+			    new IncomeExpensesPoll(ItemClass.Service.Residential, ItemClass.SubService.None, ItemClass.Level.Level5, "L5", null)
+		    };
+            residentialLowDetailIncomePolls = new IncomeExpensesPoll[]
+		    {
+			    new IncomeExpensesPoll(ItemClass.Service.Residential, ItemClass.SubService.ResidentialLow, ItemClass.Level.Level1, "L1", null),
+			    new IncomeExpensesPoll(ItemClass.Service.Residential, ItemClass.SubService.ResidentialLow, ItemClass.Level.Level2, "L2", null),
+			    new IncomeExpensesPoll(ItemClass.Service.Residential, ItemClass.SubService.ResidentialLow, ItemClass.Level.Level3, "L3", null),
+			    new IncomeExpensesPoll(ItemClass.Service.Residential, ItemClass.SubService.ResidentialLow, ItemClass.Level.Level4, "L4", null),
+			    new IncomeExpensesPoll(ItemClass.Service.Residential, ItemClass.SubService.ResidentialLow, ItemClass.Level.Level5, "L5", null)
+		    };
+            residentialHighDetailIncomePolls = new IncomeExpensesPoll[]
+		    {
+			    new IncomeExpensesPoll(ItemClass.Service.Residential, ItemClass.SubService.ResidentialHigh, ItemClass.Level.Level1, "L1", null),
+			    new IncomeExpensesPoll(ItemClass.Service.Residential, ItemClass.SubService.ResidentialHigh, ItemClass.Level.Level2, "L2", null),
+			    new IncomeExpensesPoll(ItemClass.Service.Residential, ItemClass.SubService.ResidentialHigh, ItemClass.Level.Level3, "L3", null),
+			    new IncomeExpensesPoll(ItemClass.Service.Residential, ItemClass.SubService.ResidentialHigh, ItemClass.Level.Level4, "L4", null),
+			    new IncomeExpensesPoll(ItemClass.Service.Residential, ItemClass.SubService.ResidentialHigh, ItemClass.Level.Level5, "L5", null)
+		    };
+            publicTransportDetailIncomePolls = new IncomeExpensesPoll[]
+		    {
+			    new IncomeExpensesPoll(ItemClass.Service.PublicTransport, ItemClass.SubService.PublicTransportBus, "L1", null),
+			    new IncomeExpensesPoll(ItemClass.Service.PublicTransport, ItemClass.SubService.PublicTransportMetro, "L2", null),
+			    new IncomeExpensesPoll(ItemClass.Service.PublicTransport, ItemClass.SubService.PublicTransportTrain, "L3", null),
+			    new IncomeExpensesPoll(ItemClass.Service.PublicTransport, ItemClass.SubService.PublicTransportShip, "L4", null),
+			    new IncomeExpensesPoll(ItemClass.Service.PublicTransport, ItemClass.SubService.PublicTransportPlane, "L5", null)
+		    };
+            publicTransportDetailExpensesPolls = new IncomeExpensesPoll[]
+		    {
+			    new IncomeExpensesPoll(ItemClass.Service.PublicTransport, ItemClass.SubService.PublicTransportBus, null, "L1"),
+			    new IncomeExpensesPoll(ItemClass.Service.PublicTransport, ItemClass.SubService.PublicTransportMetro, null, "L2"),
+			    new IncomeExpensesPoll(ItemClass.Service.PublicTransport, ItemClass.SubService.PublicTransportTrain, null, "L3"),
+			    new IncomeExpensesPoll(ItemClass.Service.PublicTransport, ItemClass.SubService.PublicTransportShip, null, "L4"),
+			    new IncomeExpensesPoll(ItemClass.Service.PublicTransport, ItemClass.SubService.PublicTransportPlane, null, "L5")
+		    };
+            commercialDetailIncomePolls = new IncomeExpensesPoll[]
+		    {
+			    new IncomeExpensesPoll(ItemClass.Service.Commercial, ItemClass.SubService.None, ItemClass.Level.Level1, "L1", null),
+			    new IncomeExpensesPoll(ItemClass.Service.Commercial, ItemClass.SubService.None, ItemClass.Level.Level2, "L2", null),
+			    new IncomeExpensesPoll(ItemClass.Service.Commercial, ItemClass.SubService.None, ItemClass.Level.Level3, "L3", null)
+		    };
+            commercialLowDetailIncomePolls = new IncomeExpensesPoll[]
+		    {
+			    new IncomeExpensesPoll(ItemClass.Service.Commercial, ItemClass.SubService.CommercialLow, ItemClass.Level.Level1, "L1", null),
+			    new IncomeExpensesPoll(ItemClass.Service.Commercial, ItemClass.SubService.CommercialLow, ItemClass.Level.Level2, "L2", null),
+			    new IncomeExpensesPoll(ItemClass.Service.Commercial, ItemClass.SubService.CommercialLow, ItemClass.Level.Level3, "L3", null)
+		    };
+            commercialHighDetailIncomePolls = new IncomeExpensesPoll[]
+		    {
+			    new IncomeExpensesPoll(ItemClass.Service.Commercial, ItemClass.SubService.CommercialHigh, ItemClass.Level.Level1, "L1", null),
+			    new IncomeExpensesPoll(ItemClass.Service.Commercial, ItemClass.SubService.CommercialHigh, ItemClass.Level.Level2, "L2", null),
+			    new IncomeExpensesPoll(ItemClass.Service.Commercial, ItemClass.SubService.CommercialHigh, ItemClass.Level.Level3, "L3", null)
+		    };
+            industrialDetailIncomePolls = new IncomeExpensesPoll[]
+		    {
+			    new IncomeExpensesPoll(ItemClass.Service.Industrial, ItemClass.SubService.IndustrialGeneric, ItemClass.Level.Level1, "L1", null),
+			    new IncomeExpensesPoll(ItemClass.Service.Industrial, ItemClass.SubService.IndustrialGeneric, ItemClass.Level.Level2, "L2", null),
+			    new IncomeExpensesPoll(ItemClass.Service.Industrial, ItemClass.SubService.IndustrialGeneric, ItemClass.Level.Level3, "L3", null),
+			    new IncomeExpensesPoll(ItemClass.Service.Industrial, ItemClass.SubService.IndustrialFarming, "L4", null),
+			    new IncomeExpensesPoll(ItemClass.Service.Industrial, ItemClass.SubService.IndustrialForestry, "L5", null),
+			    new IncomeExpensesPoll(ItemClass.Service.Industrial, ItemClass.SubService.IndustrialOil, "L6", null),
+			    new IncomeExpensesPoll(ItemClass.Service.Industrial, ItemClass.SubService.IndustrialOre, "L7", null)
+		    };
+            officeDetailIncomePolls = new IncomeExpensesPoll[]
+		    {
+			    new IncomeExpensesPoll(ItemClass.Service.Office, ItemClass.SubService.None, ItemClass.Level.Level1, "L1", null),
+			    new IncomeExpensesPoll(ItemClass.Service.Office, ItemClass.SubService.None, ItemClass.Level.Level2, "L2", null),
+			    new IncomeExpensesPoll(ItemClass.Service.Office, ItemClass.SubService.None, ItemClass.Level.Level3, "L3", null)
+		    };
+            budgetExpensesPolls = new IncomeExpensesPoll[]
+		    {
+			    basicExpensesPolls[0],
+			    basicExpensesPolls[1],
+			    basicExpensesPolls[2],
+			    basicExpensesPolls[3],
+			    basicExpensesPolls[4],
+			    basicExpensesPolls[5],
+			    basicExpensesPolls[6],
+			    basicExpensesPolls[7],
+			    basicExpensesPolls[8],
+			    basicExpensesPolls[9],
+			    publicTransportDetailExpensesPolls[0],
+			    publicTransportDetailExpensesPolls[1],
+			    publicTransportDetailExpensesPolls[2],
+			    publicTransportDetailExpensesPolls[3],
+			    publicTransportDetailExpensesPolls[4]
+		    };
+            pollsinitialized = true;
+        }
+
+        private static bool pollsinitialized = false;
+
+        private sealed class IncomeExpensesPoll
+        {
+            private ItemClass.Service m_Service;
+            private ItemClass.SubService m_SubService;
+            private ItemClass.Level m_Level;
+            private long m_Income = 9223372036854775807L;
+            private long m_Expenses = 9223372036854775807L;
+            private string m_IncomeString = "N/A";
+            private string m_ExpensesString = "N/A";
+            private bool m_Bound;
+            private string m_IncomeFieldName;
+            private string m_ExpensesFieldName;
+            private UITextComponent m_IncomeField;
+            private UITextComponent m_ExpensesField;
+            public string incomeString
+            {
+                get
+                {
+                    return this.m_IncomeString;
+                }
+            }
+            public string expensesString
+            {
+                get
+                {
+                    return this.m_ExpensesString;
+                }
+            }
+            public double income
+            {
+                get
+                {
+                    return (double)this.m_Income;
+                }
+            }
+            public double expenses
+            {
+                get
+                {
+                    return (double)this.m_Expenses;
+                }
+            }
+            public IncomeExpensesPoll(ItemClass.Service service, string incomeFieldName, string expensesFieldName)
+            {
+                this.m_Service = service;
+                this.m_SubService = ItemClass.SubService.None;
+                this.m_Level = ItemClass.Level.None;
+                this.m_IncomeFieldName = incomeFieldName;
+                this.m_ExpensesFieldName = expensesFieldName;
+            }
+            public IncomeExpensesPoll(ItemClass.Service service, ItemClass.SubService subService, string incomeFieldName, string expensesFieldName)
+            {
+                this.m_Service = service;
+                this.m_SubService = subService;
+                this.m_Level = ItemClass.Level.None;
+                this.m_IncomeFieldName = incomeFieldName;
+                this.m_ExpensesFieldName = expensesFieldName;
+            }
+            public IncomeExpensesPoll(ItemClass.Service service, ItemClass.SubService subService, ItemClass.Level level, string incomeFieldName, string expensesFieldName)
+            {
+                this.m_Service = service;
+                this.m_SubService = subService;
+                this.m_Level = level;
+                this.m_IncomeFieldName = incomeFieldName;
+                this.m_ExpensesFieldName = expensesFieldName;
+            }
+            public void Poll(string moneyFormat, CultureInfo moneyLocale)
+            {
+                long num = 0L;
+                long num2 = 0L;
+                if (Singleton<EconomyManager>.exists)
+                {
+                    Singleton<EconomyManager>.instance.GetIncomeAndExpenses(this.m_Service, this.m_SubService, this.m_Level, out num, out num2);
+                }
+                if (num != this.m_Income)
+                {
+                    this.m_Income = num;
+                    this.m_IncomeString = ((double)this.m_Income / 100.0).ToString(moneyFormat, moneyLocale);
+                }
+                if (num2 != this.m_Expenses)
+                {
+                    this.m_Expenses = num2;
+                    this.m_ExpensesString = ((double)this.m_Expenses / 100.0).ToString(moneyFormat, moneyLocale);
+                }
+            }
+            public void Update(UIComponent root)
+            {
+                if (!this.m_Bound)
+                {
+                    this.m_Bound = true;
+                    this.m_IncomeField = root.Find<UITextComponent>(this.m_IncomeFieldName);
+                    this.m_ExpensesField = root.Find<UITextComponent>(this.m_ExpensesFieldName);
+                }
+                else
+                {
+                    if (this.m_IncomeField != null)
+                    {
+                        this.m_IncomeField.text = this.incomeString;
+                    }
+                    if (this.m_ExpensesField != null)
+                    {
+                        this.m_ExpensesField.text = this.expensesString;
+                    }
+                }
+            }
+        }
+        private static void UpdateIncomeExpenses()
+        {
+            for (int i = 0; i < publicTransportDetailExpensesPolls.Length; i++)
+            {
+                publicTransportDetailExpensesPolls[i].Poll(Settings.moneyFormat, LocaleManager.cultureInfo);
+            }
+            for (int j = 0; j < basicIncomePolls.Length; j++)
+            {
+                basicIncomePolls[j].Poll(Settings.moneyFormat, LocaleManager.cultureInfo);
+                //basicIncomePolls[j].Update(base.component);
+            }
+            for (int k = 0; k < basicExpensesPolls.Length; k++)
+            {
+                basicExpensesPolls[k].Poll(Settings.moneyFormat, LocaleManager.cultureInfo);
+                //basicExpensesPolls[k].Update(component);
+            }
+            //m_PoliciesExpenses.text = this.expensesPoliciesTotal;
+            //m_LoansExpenses.text = this.expensesLoansTotal;
         }
     }
 }

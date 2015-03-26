@@ -41,3 +41,28 @@ $RECYCLE.BIN/
 Network Trash Folder
 Temporary Items
 .apdisk
+obj/Release/TemporaryGeneratedFile_E7A71F73-0F8D-4B9B-B56E-8E70B10BC5D3.cs
+obj/Release/TemporaryGeneratedFile_5937a670-0e60-4077-877b-f7221da3dda1.cs
+obj/Release/DesignTimeResolveAssemblyReferences.cache
+obj/Debug/CSLStatsPanel.csproj.FileListAbsolute.txt
+bin/Debug/Assembly-CSharp.dll
+bin/Debug/ColossalManaged.dll
+bin/Debug/CSLStatsPanel.pdb
+*.suo
+*.pdb
+*.cache
+obj/Release/TemporaryGeneratedFile_036C0B5B-1481-4323-8D20-8F5ADCB23D92.cs
+obj/Release/CSLStatsPanel.csproj.FileListAbsolute.txt
+obj/Release/CSLStatsPanel.dll
+obj/Debug/CSLStatsPanel.dll
+bin/Release/UnityEngine.UI.dll
+bin/Release/UnityEngine.dll
+bin/Release/ICSharpCode.SharpZipLib.dll
+bin/Release/ICities.dll
+bin/Release/CSLStatsPanel.dll
+bin/Release/ColossalManaged.dll
+bin/Release/Assembly-CSharp.dll
+bin/Debug/UnityEngine.UI.dll
+bin/Debug/UnityEngine.dll
+bin/Debug/ICSharpCode.SharpZipLib.dll
+bin/Debug/ICities.dll
