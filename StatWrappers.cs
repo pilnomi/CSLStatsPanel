@@ -141,6 +141,7 @@ namespace CSLStatsPanel
             this.category = category;
             m_desc = description;
             m_value = (float)value;
+            m_scaledesc = suffix;
             statstring = description + ": " + Math.Round(value, precision).ToString() + suffix;
 
         }
@@ -283,7 +284,7 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
             {
                 statstopull.Add(new StatisticsClassWrapper(cat, "Used", ds.dmusage / 1000, 2, "MW"));
                 statstopull.Add(new StatisticsClassWrapper(cat, "Capacity", StatisticType.ElectricityCapacity, 1000, 16, "MW"));
-                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, ds.dmusage.ToString(), "Capacity", "ToolbarIconElectricity", true));
+                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, ds.dmusage.ToString(), "Capacity", "InfoIconElectricity", true));
                 statstopull = new List<StatisticsClassWrapper>();
             }
 
@@ -293,7 +294,7 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                 statstopull.Add(new StatisticsClassWrapper(cat, "Used", ds.waterbuffer, 2, "m³"));
                 statstopull.Add(new StatisticsClassWrapper(cat, "Capacity", StatisticType.WaterCapacity, 1, 16, "m³"));
                 statstopull.Add(new StatisticsClassWrapper(cat, "Pollution", StatisticType.WaterPollution, 1, 1, "%"));
-                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Used", "Capacity", "GenericPanel", true));
+                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Used", "Capacity", "InfoIconWater", true));
                 statstopull = new List<StatisticsClassWrapper>();
             }
 
@@ -302,7 +303,7 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
             {
                 statstopull.Add(new StatisticsClassWrapper(cat, "Used", ds.sewagebuffer, 2, "m³"));
                 statstopull.Add(new StatisticsClassWrapper(cat, "Capacity", StatisticType.SewageCapacity, 1, 16, "m³"));
-                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Used", "Capacity", "GenericPanel", true));
+                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Used", "Capacity", "InfoIconWaterPressed", true));
                 statstopull = new List<StatisticsClassWrapper>();
             }
 
@@ -312,7 +313,7 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                 statstopull.Add(new StatisticsClassWrapper(cat, "Amount", StatisticType.GarbageAmount, 1000, 1, "K")); ;
                 int garbageamount = (int)statstopull.Last().m_value;
                 statstopull.Add(new StatisticsClassWrapper(cat, "Accumulation", ds.garbage));
-                garbageamount += (int)statstopull.Last().m_value;
+                garbageamount += (int)ds.garbage;
                 statstopull.Add(new StatisticsClassWrapper(cat, "Total Inflow", garbageamount));
                 statstopull.Add(new StatisticsClassWrapper(cat, "Capacity", StatisticType.GarbageCapacity, 1000, 1, "K")); ;
                 int totalcapacity = (int)statstopull.Last().m_value;
@@ -320,7 +321,7 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                 totalcapacity += (int)statstopull.Last().m_value;
                 statstopull.Add(new StatisticsClassWrapper(cat, "Total Capacity", totalcapacity));
                 statstopull.Add(new StatisticsClassWrapper(cat, "Piles", StatisticType.GarbagePiles, 1000, 1, "M"));
-                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Total Inflow", "Total Capacity", "GenericPanel", true));
+                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Total Inflow", "Total Capacity", "InfoIconGarbage", true));
                 statstopull = new List<StatisticsClassWrapper>();
             }
 
@@ -333,7 +334,7 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                 statstopull.Add(new StatisticsClassWrapper(cat, "Well Being", ImmaterialResourceManager.Resource.Wellbeing, 1, 1, "%"));
                 statstopull.Add(new StatisticsClassWrapper(cat, "Sick", ds.sickcount));
                 statstopull.Add(new StatisticsClassWrapper(cat, "Capacity", StatisticType.HealCapacity, 1, 1, ""));
-                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, (100 - health).ToString(), "30"));
+                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, (100 - health).ToString(), "30", "InfoIconHealth"));
                 statstopull = new List<StatisticsClassWrapper>();
             }
             
@@ -347,7 +348,7 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                 
                 if (statstopull.Last().m_value > 0)
                     catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Amount", "Cremate Capacity", "GenericPanel", true));
-                else catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Amount", "Capacity", "GenericPanel", true));
+                else catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Amount", "Capacity", "InfoIconHealthPressed", true));
                 statstopull = new List<StatisticsClassWrapper>();
             }
 
@@ -365,27 +366,34 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
             {
                 statstopull.Add(new StatisticsClassWrapper(cat, "Hazard", ImmaterialResourceManager.Resource.FireHazard, 1, 1, "%"));
                 statstopull.Add(new StatisticsClassWrapper(cat, "Buildings Burning", bs.onfire, 2, ""));
-                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Hazard", "50"));
+                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Hazard", "50", "InfoIconFireSafety"));
                 statstopull = new List<StatisticsClassWrapper>();
             }
             //statstopull.Add(new StatisticsClassWrapper("Health Services", "Heath Care", ImmaterialResourceManager.Resource.HealthCare, 1, 1, "%"));
             //statstopull.Add(new StatisticsClassWrapper("Health Services", "Health", ImmaterialResourceManager.Resource.Health, 1, 1, "%"));
 
             cat = "Economy";
+            
             //if (CSLStatsPanelConfigSettings.isCatActive(cat))
             {
                 if (!pollsinitialized) InitializePolls();
                 //UpdateIncomeExpenses();
-                double myincome = 0;
+                double myincome = 0, myexpenses = 0;
                 basicIncomePolls[0].Poll(Settings.moneyFormat, LocaleManager.cultureInfo);
                 myincome += basicIncomePolls[0].income;
-                    
+
+                for (int j = 0; j < budgetExpensesPolls.Length; j++)
+                {
+                    budgetExpensesPolls[j].Poll(Settings.moneyFormat, LocaleManager.cultureInfo);
+                    myexpenses += budgetExpensesPolls[j].expenses;
+                }
+                myexpenses += expensesPoliciesTotal;
                 StatisticsClassWrapper tempscw = new StatisticsClassWrapper(cat, "Service Expenses", StatisticType.ServiceExpenses, 1, 1, "");
-                int servicesexpenses = (int)tempscw.m_value / 100;
-                tempscw = new StatisticsClassWrapper(cat, "Income", myincome);
-                int servicesincome = (int)tempscw.m_value / 100;
-                
+                int servicesexpenses = (int)myexpenses / 100 ; // tempscw.m_value / 100;
+                int servicesincome = (int)myincome / 100; // tempscw.m_value / 100;
                 statstopull.Add(new StatisticsClassWrapper(cat, "Budget", servicesincome - servicesexpenses));
+                statstopull.Add(new StatisticsClassWrapper(cat, "Income", servicesincome));
+                statstopull.Add(new StatisticsClassWrapper(cat, "Expenses", servicesexpenses));
                 statstopull.Add(new StatisticsClassWrapper(cat, "Entertainment", ImmaterialResourceManager.Resource.Entertainment, 1, 1, ""));
                 statstopull.Add(new StatisticsClassWrapper(cat, "Attractiveness", ImmaterialResourceManager.Resource.Attractiveness, 1, 1, ""));
                 statstopull.Add(new StatisticsClassWrapper(cat, "Cargo Transport", ImmaterialResourceManager.Resource.CargoTransport, 1, 1, ""));
@@ -394,7 +402,7 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                 statstopull.Add(new StatisticsClassWrapper(cat, "Land Value", ImmaterialResourceManager.Resource.LandValue, 1, 1, "₡/m²"));
                 statstopull.Add(new StatisticsClassWrapper(cat, "ImmaterialResource", StatisticType.ImmaterialResource, 1000, 1, "M"));
                 statstopull.Add(new StatisticsClassWrapper(cat, "Goods Produced", StatisticType.GoodsProduced, 1000, 1, "K"));
-                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, servicesexpenses.ToString(), servicesincome.ToString()));
+                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, servicesexpenses.ToString(), servicesincome.ToString(), "InfoIconLandValue"));
                 statstopull = new List<StatisticsClassWrapper>();
             }
 
@@ -408,7 +416,7 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                 statstopull.Add(new StatisticsClassWrapper(cat, "Death Rate", StatisticType.DeathRate, 1, 1, ""));
                 statstopull.Add(new StatisticsClassWrapper(cat, "Eligible Workers", StatisticType.EligibleWorkers, 1, 1, ""));
                 statstopull.Add(new StatisticsClassWrapper(cat, "Unemployed", StatisticType.Unemployed, 1, 1, ""));
-                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Death Rate", "Birth Rate"));
+                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Death Rate", "Birth Rate", "InfoIconPopulation"));
                 statstopull = new List<StatisticsClassWrapper>();
             }
 
@@ -419,7 +427,7 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                 statstopull.Add(new StatisticsClassWrapper(cat, "Educated", StatisticType.EducatedCount, 1, 1, ""));
                 statstopull.Add(new StatisticsClassWrapper(cat, "Students", StatisticType.StudentCount, 1, 1, ""));
                 statstopull.Add(new StatisticsClassWrapper(cat, "Max Students", StatisticType.EducationCapacity, 1, 1, ""));
-                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Students", "Max Students", "GenericPanel", true));
+                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Students", "Max Students", "InfoIconEducation", true));
                 statstopull = new List<StatisticsClassWrapper>();
             }
 
@@ -429,7 +437,7 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
 
                 statstopull.Add(new StatisticsClassWrapper(cat, "Crime Rate", ds.finalcrimerate, 2, "%"));
                 statstopull.Add(new StatisticsClassWrapper(cat, "Crimes", StatisticType.CrimeRate, 1, 1, ""));
-                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Crime Rate", "20"));
+                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Crime Rate", "20", "InfoIconCrime"));
                 statstopull = new List<StatisticsClassWrapper>();
             }
 
@@ -439,7 +447,7 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
 
                 statstopull.Add(new StatisticsClassWrapper(cat, "Visits", StatisticType.TouristVisits, 1, 1, ""));
                 statstopull.Add(new StatisticsClassWrapper(cat, "Incoming", StatisticType.IncomingTourists, 1, 1, ""));
-                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "", ""));
+                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "", "", "InfoIconPublicTransportPressed"));
                 statstopull = new List<StatisticsClassWrapper>();
             }
 
@@ -449,7 +457,7 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
 
                 statstopull.Add(new StatisticsClassWrapper(cat, "Availability", ImmaterialResourceManager.Resource.PublicTransport, 1, 1, "%"));
                 statstopull.Add(new StatisticsClassWrapper(cat, "Avg Passengers", StatisticType.AveragePassengers, 1, 1, ""));
-                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "80", "Availability"));
+                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "80", "Availability", "InfoIconPublicTransport"));
                 statstopull = new List<StatisticsClassWrapper>();
             }
 
@@ -458,7 +466,7 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
             {
                 statstopull.Add(new StatisticsClassWrapper("Pollution", "Noise", ImmaterialResourceManager.Resource.NoisePollution, 1, 1, "%"));
                 statstopull.Add(new StatisticsClassWrapper("Pollution", "Ground", ds.groundpollution, 2, "%"));
-                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "", ""));
+                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "", "", "InfoIconPollution"));
                 statstopull = new List<StatisticsClassWrapper>();
             }
 
@@ -493,7 +501,7 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
 			    new IncomeExpensesPoll(ItemClass.Service.Education, null, "EducationTotal"),
 			    new IncomeExpensesPoll(ItemClass.Service.Monument, null, "MonumentsTotal"),
 			    new IncomeExpensesPoll(ItemClass.Service.Beautification, null, "ParksTotal")
-		    };
+		    }; 
             basicIncomePolls = new IncomeExpensesPoll[]
 		    {
 			    new IncomeExpensesPoll(ItemClass.Service.None, "IncomeTotal", "ExpensesTotal"),
@@ -730,6 +738,19 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
             }
             //m_PoliciesExpenses.text = this.expensesPoliciesTotal;
             //m_LoansExpenses.text = this.expensesLoansTotal;
+        }
+
+        public static long expensesPoliciesTotal
+        {
+            get
+            {
+                long policyexpense = 0;
+                if (Singleton<EconomyManager>.exists)
+                {
+                    policyexpense = Singleton<EconomyManager>.instance.GetPolicyExpenses();
+                }
+                return policyexpense;
+            }
         }
     }
 }

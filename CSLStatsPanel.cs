@@ -56,7 +56,7 @@ namespace CSLStatsPanel
                 base.OnCreated(threading);
             }
             
-
+            
             static int numberofcalls = 0; //track approximate fps
             //called about ~60 times per second. (or max frame rate user is getting atm imagine)
             public override void OnUpdate(float realTimeDelta, float simulationTimeDelta)

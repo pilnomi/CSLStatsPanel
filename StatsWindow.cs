@@ -72,6 +72,7 @@ namespace CSLStatsPanel
                 myStatsWindowPanel = (CSLStatsMasterWindow)UIView.GetAView().AddUIComponent(typeof(CSLStatsMasterWindow));
                 myStatsWindowPanel.name = "CSLStatsMasterPanel";
                 updateText();
+                updateText();
             }
             else
             {
@@ -95,6 +96,7 @@ namespace CSLStatsPanel
             if (!initialized) return;
             if (running) return;
             running = true;
+            if (configChanged) myStatsWindowPanel.updateText(CSLStatsPanelConfigSettings.Categories(true));
             configChanged = false;
             //myStatsWindowPanel.getstats2();
             myStatsWindowPanel.updateText(CSLStatsPanelConfigSettings.Categories(true));
@@ -110,12 +112,7 @@ namespace CSLStatsPanel
         UILabel resizelabel, headertext;
         bool firstrun = true;
         bool dragging = false;
-        public SavedFloat
-            windowx = new SavedFloat("ModCSLStatsPanelWindowPosX", Settings.gameSettingsFile, 0, true),
-            windowy = new SavedFloat("ModCSLStatsPanelWindowPosY", Settings.gameSettingsFile, 0, true),
-            windoww = new SavedFloat("ModCSLStatsPanelWindowPosW", Settings.gameSettingsFile, 700, true),
-            windowh = new SavedFloat("ModCSLStatsPanelWindowPosH", Settings.gameSettingsFile, 400, true);
-        SavedInt fontchange = new SavedInt("CSLStatsPanelTextScaleDelta", Settings.gameSettingsFile, 0, true);
+
         int minfontsize = -15, maxfontsize = 20;
         float fontincr = .05f;
 
@@ -146,14 +143,14 @@ namespace CSLStatsPanel
         public void addConfigureButton()
         {
             if (configButton != null) this.RemoveUIComponent(configButton);
-            /*
+            
             UIScrollablePanel p = myresizepanel.AddUIComponent<UIScrollablePanel>();
             p.autoLayout = true;
             p.autoSize = true;
             p.autoLayoutDirection = LayoutDirection.Horizontal;
             p.autoLayoutStart = LayoutStart.TopLeft;
-            */
-            configButton = (UIButton)myresizepanel.AddUIComponent(typeof(UIButton));
+            
+            configButton = (UIButton)p.AddUIComponent(typeof(UIButton));
             configButton.width = 125;
             configButton.height = 20;
             configButton.normalBgSprite = "ButtonMenu";
@@ -170,15 +167,40 @@ namespace CSLStatsPanel
             configButton.BringToFront();
             configButton.text = "Configure";
             configButton.eventClick += new MouseEventHandler(configButton_eventClick);
-                
-            
-            //p.FitChildrenHorizontally();
-            //p.FitChildrenVertically();
-            //p.FitToContents();
 
-            
+            UIButton modetoggle = (UIButton)p.AddUIComponent(typeof(UIButton));
+            modetoggle.width = 125;
+            modetoggle.height = 20;
+            modetoggle.normalBgSprite = "ButtonMenu";
+            modetoggle.hoveredBgSprite = "ButtonMenuHovered";
+            modetoggle.focusedBgSprite = "ButtonMenuFocused";
+            modetoggle.pressedBgSprite = "ButtonMenuPressed";
+            modetoggle.textColor = new Color32(186, 217, 238, 0);
+            modetoggle.disabledTextColor = new Color32(7, 7, 7, 255);
+            modetoggle.hoveredTextColor = new Color32(7, 132, 255, 255);
+            modetoggle.focusedTextColor = new Color32(255, 255, 255, 255);
+            modetoggle.pressedTextColor = new Color32(30, 30, 44, 255);
+            modetoggle.color = new Color32(configButton.color.r, configButton.color.g, configButton.color.b, 255);
+            //configButton.transformPosition = new Vector3(1.2f, -0.93f);
+            modetoggle.BringToFront();
+            modetoggle.text = (CSLStatsPanelConfigSettings.m_MiniMode.value) ? "Expand" : "Mini";
+            modetoggle.eventClick += new MouseEventHandler(modetoggle_eventClick);
+
+            modetoggle.spritePadding = new RectOffset(125/2, 0, 0, 0);
+            //p.FitChildrenHorizontally();
+            p.FitChildrenVertically();
+            //p.FitToContents();
+            //myresizepanel.FitChildrenVertically();
             myresizepanel.FitChildrenVertically();
-            
+        }
+
+        void modetoggle_eventClick(UIComponent component, UIMouseEventParameter eventParam)
+        {
+            CSLStatsPanelConfigSettings.m_MiniMode.value = !CSLStatsPanelConfigSettings.m_MiniMode.value;
+            ((UIButton)component).text = (CSLStatsPanelConfigSettings.m_MiniMode.value) ? "Expand" : "Mini";
+            component.parent.Focus();
+            myconfigwindow_eventModeConfigChanged(this, EventArgs.Empty);
+
         }
 
 
@@ -195,7 +217,7 @@ namespace CSLStatsPanel
             headerpanel.height = 20;
             headerpanel.backgroundSprite = "GenericPanel";
             headerpanel.color = new Color32(0, 0, 100, 100);
-            
+
             headertext = headerpanel.AddUIComponent<UILabel>();
             headertext.text = "CSL Stats Panel";
             headertext.CenterToParent();
@@ -212,10 +234,14 @@ namespace CSLStatsPanel
             resizelabel = myresizepanel.AddUIComponent<UILabel>();
 
             addConfigureButton();
-
             setdefaultpos();
         }
 
+        public override void Start()
+        {
+            base.Start();
+ 
+        }
         public override void OnDestroy()
         {
             if (myconfigwindow != null) GameObject.Destroy(myconfigwindow);
@@ -229,12 +255,21 @@ namespace CSLStatsPanel
             {
                 myconfigwindow = (ConfigWindow)UIView.GetAView().AddUIComponent(typeof(ConfigWindow));
                 myconfigwindow.eventStatsConfigChanged += new ConfigWindow.eventStatsConfigChangedHandler(myconfigwindow_eventStatsConfigChanged);
+                myconfigwindow.eventModeConfigChanged += new ConfigWindow.eventConfigModeChangedHandler(myconfigwindow_eventModeConfigChanged);
             }
             else
             {
                 GameObject.Destroy(myconfigwindow);
                 myconfigwindow = null;
             }
+            component.parent.Focus();
+        }
+
+        void myconfigwindow_eventModeConfigChanged(object sender, EventArgs e)
+        {
+            configChanged = true;
+            resetStatsWindow();
+            setdefaultpos();            
         }
 
         public bool configChanged = false;
@@ -246,12 +281,22 @@ namespace CSLStatsPanel
 
         void setdefaultpos()
         {
+            SavedFloat windowx = (!CSLStatsPanelConfigSettings.m_MiniMode.value) ? CSLStatsPanelConfigSettings.windowx : CSLStatsPanelConfigSettings.miniwindowx,
+                windowy = (!CSLStatsPanelConfigSettings.m_MiniMode.value) ? CSLStatsPanelConfigSettings.windowy : CSLStatsPanelConfigSettings.miniwindowy,
+                windoww = (!CSLStatsPanelConfigSettings.m_MiniMode.value) ? CSLStatsPanelConfigSettings.windoww : CSLStatsPanelConfigSettings.miniwindoww,
+                windowh = (!CSLStatsPanelConfigSettings.m_MiniMode.value) ? CSLStatsPanelConfigSettings.windowh : CSLStatsPanelConfigSettings.miniwindowh;
+            SavedInt fontchange = (!CSLStatsPanelConfigSettings.m_MiniMode.value) ? CSLStatsPanelConfigSettings.fontchange : CSLStatsPanelConfigSettings.minifontchange;
+
+
             this.position = new Vector3(windowx.value, windowy.value, this.position.z);
             this.width = windoww.value;
             this.height = windowh.value;
             if (this.width == 0) this.width = 700;
             if (this.height == 0) this.height = 400;
 
+            myStatsWindowPanel.width = this.width;
+            myStatsWindowPanel.height = this.height - headerpanel.height - myresizepanel.height;
+            
             if (fontchange.value < minfontsize) fontchange.value = minfontsize;
             if (fontchange.value > maxfontsize) fontchange.value = maxfontsize;
             foreach (KeyValuePair<string, CSLStatusWindowSubPanel> subpanel in myStatsWindowPanel.m_categories)
@@ -260,7 +305,20 @@ namespace CSLStatsPanel
                 {
                     l.textScale += fontincr * fontchange.value;
                 }
+                if (subpanel.Value.spritepanel != null)
+                {
+                    UIScrollablePanel sp = subpanel.Value.GetComponentInChildren<UIScrollablePanel>();
+                    UISprite s = subpanel.Value.GetComponentInChildren<UISprite>();
+                    UILabel l = subpanel.Value.GetComponentInChildren<UILabel>();
+                    l.padding = new RectOffset(l.padding.left + (1 * fontchange.value), l.padding.right, l.padding.top, l.padding.bottom);
+                    s.width += 1 * fontchange.value;
+                    s.height += 1 * fontchange.value;
+                    //sp.FitChildrenHorizontally();
+                    //sp.FitToContents();
+                }
+                
                 subpanel.Value.FitToContents();
+                
             }
             OnSizeChanged();
         }
@@ -275,8 +333,14 @@ namespace CSLStatsPanel
         }
         protected override void OnSizeChanged()
         {
+            SavedFloat windowx = (!CSLStatsPanelConfigSettings.m_MiniMode.value) ? CSLStatsPanelConfigSettings.windowx : CSLStatsPanelConfigSettings.miniwindowx,
+                windowy = (!CSLStatsPanelConfigSettings.m_MiniMode.value) ? CSLStatsPanelConfigSettings.windowy : CSLStatsPanelConfigSettings.miniwindowy,
+                windoww = (!CSLStatsPanelConfigSettings.m_MiniMode.value) ? CSLStatsPanelConfigSettings.windoww : CSLStatsPanelConfigSettings.miniwindoww,
+                windowh = (!CSLStatsPanelConfigSettings.m_MiniMode.value) ? CSLStatsPanelConfigSettings.windowh : CSLStatsPanelConfigSettings.miniwindowh;
+
             
             base.OnSizeChanged();
+            
             headerpanel.width = this.width;
             myresizepanel.width = this.width;
             myStatsWindowPanel.width = this.width;
@@ -307,6 +371,12 @@ namespace CSLStatsPanel
         {
             if (dragging)
             {
+                SavedFloat windowx = (!CSLStatsPanelConfigSettings.m_MiniMode.value) ? CSLStatsPanelConfigSettings.windowx : CSLStatsPanelConfigSettings.miniwindowx,
+                    windowy = (!CSLStatsPanelConfigSettings.m_MiniMode.value) ? CSLStatsPanelConfigSettings.windowy : CSLStatsPanelConfigSettings.miniwindowy,
+                    windoww = (!CSLStatsPanelConfigSettings.m_MiniMode.value) ? CSLStatsPanelConfigSettings.windoww : CSLStatsPanelConfigSettings.miniwindoww,
+                    windowh = (!CSLStatsPanelConfigSettings.m_MiniMode.value) ? CSLStatsPanelConfigSettings.windowh : CSLStatsPanelConfigSettings.miniwindowh;
+
+                
                 windowx.value = this.position.x; windowy.value = this.position.y;
                 windoww.value = this.width; windowh.value = this.height;
             }
@@ -341,6 +411,7 @@ namespace CSLStatsPanel
         bool zooming = false;
         protected override void OnMouseWheel(UIMouseEventParameter p)
         {
+            SavedInt fontchange = (!CSLStatsPanelConfigSettings.m_MiniMode.value) ? CSLStatsPanelConfigSettings.fontchange : CSLStatsPanelConfigSettings.minifontchange;
             if (!zooming)
             {
                 float wd = p.wheelDelta;
@@ -357,6 +428,15 @@ namespace CSLStatsPanel
                 zooming = true;
                 foreach (KeyValuePair<string, CSLStatusWindowSubPanel> subpanel in myStatsWindowPanel.m_categories)
                 {
+                    if (subpanel.Value.spritepanel != null)
+                    {
+                        UISprite s = subpanel.Value.spritepanel.GetComponentInChildren<UISprite>();
+                        s.width += (wd > 0) ? 1 : -1;
+                        s.height += (wd > 0) ? 1 : -1;
+                        UILabel l = subpanel.Value.GetComponentInChildren<UILabel>();
+                        l.padding = new RectOffset(l.padding.left + ((wd > 0) ? 1 : -1), l.padding.right, l.padding.top, l.padding.bottom);
+                    
+                    }
                     foreach (CSLStatsPanelLabel l in subpanel.Value.m_textfields)
                     {
                         if (wd < 0)
@@ -404,7 +484,7 @@ namespace CSLStatsPanel
         public int mycount = 0;
         public bool m_issubpanel = false;
         public List<string> m_stringbuilder = new List<string>();
-        
+        public UIScrollablePanel spritepanel = null;
         public Dictionary<string, CSLStatusWindowSubPanel> m_categories = new Dictionary<string, CSLStatusWindowSubPanel>();
         public List<CSLStatsPanelLabel> m_textfields = new List<CSLStatsPanelLabel>();
         bool firstrun = true;
@@ -480,7 +560,27 @@ namespace CSLStatsPanel
                 {
                     statlog.log("adding category " + currentcat);
                     m_categories.Add(currentcat, (CSLStatusWindowSubPanel)this.AddUIComponent(typeof(CSLStatusWindowSubPanel)));
-                    //m_categories[currentcat].backgroundSprite = categorydata[i].m_sprite;
+                    if (!string.IsNullOrEmpty(categorydata[i].m_sprite))
+                    {
+                        UIScrollablePanel spritepanel = m_categories[currentcat].AddUIComponent<UIScrollablePanel>();
+
+                        UISprite p = spritepanel.AddUIComponent<UISprite>();
+                        spritepanel.autoSize = true;
+                        p.color = new Color32(255, 255, 255, 255);
+                        p.spriteName = categorydata[i].m_sprite; 
+                        p.opacity = 1;
+
+                        p.width = 20; p.height = 20;
+                  
+                        spritepanel.autoLayoutDirection = LayoutDirection.Horizontal;
+                        //spritepanel.autoLayoutPadding = new RectOffset(1, 1, 1, 1);
+                        CSLStatsPanelLabel l = (CSLStatsPanelLabel)spritepanel.AddUIComponent(typeof(CSLStatsPanelLabel));
+                        m_categories[currentcat].m_textfields.Add(l);
+                        m_categories[currentcat].spritepanel = spritepanel;
+                        
+                        l.padding = new RectOffset(20, 1, 1, 1);
+                        
+                    }
 
                 }
 
@@ -509,16 +609,37 @@ namespace CSLStatsPanel
                     {
                         if (m_categories[currentcat].m_stringbuilder.Count() == 0)
                         {
-                            if (categorydata[i].m_showstatsummary && categorydata[i].capacityUsage > -1)
+                            if (CSLStatsPanelConfigSettings.m_MiniMode.value 
+                                && !CSLStatsPanelConfigSettings.m_ShowLabelsInMiniMode)
                             {
-                                m_categories[currentcat].m_stringbuilder.Add(currentcat
-                                    + ((categorydata[i].m_showstatsummary && categorydata[i].capacityUsage > -1) ? " - " + Math.Round(categorydata[i].capacityUsage * 100, 0).ToString() + "%" : ""));
-                            }
-                            else if (myscwlist.Count() > 0)
-                            {
-                                m_categories[currentcat].m_stringbuilder.Add(currentcat
-                                    + " - " + Math.Round(myscwlist[0].m_value,0) + myscwlist[0].m_scaledesc );
+                                if (categorydata[i].m_showstatsummary && categorydata[i].capacityUsage > -1)
+                                {
+                                    m_categories[currentcat].m_stringbuilder.Add(
+                                        (
+                                        (categorydata[i].m_showstatsummary && categorydata[i].capacityUsage > -1) ? Math.Round(categorydata[i].capacityUsage * 100, 0).ToString() + "%" : ""));
+                                }
+                                else if (myscwlist.Count() > 0)
+                                {
+                                    m_categories[currentcat].m_stringbuilder.Add(
+                                        Math.Round(myscwlist[0].m_value, 0) + myscwlist[0].m_scaledesc);
 
+                                }
+
+                            }
+                            else
+                            {
+
+                                if (categorydata[i].m_showstatsummary && categorydata[i].capacityUsage > -1)
+                                {
+                                    m_categories[currentcat].m_stringbuilder.Add(currentcat
+                                        + ((categorydata[i].m_showstatsummary && categorydata[i].capacityUsage > -1) ? " - " + Math.Round(categorydata[i].capacityUsage * 100, 0).ToString() + "%" : ""));
+                                }
+                                else if (myscwlist.Count() > 0)
+                                {
+                                    m_categories[currentcat].m_stringbuilder.Add(currentcat
+                                        + " - " + Math.Round(myscwlist[0].m_value, 0) + myscwlist[0].m_scaledesc);
+
+                                }
                             }
                         }
                         
@@ -574,10 +695,13 @@ namespace CSLStatsPanel
             if (usesinglefield) m_textfields[0].text = s;
             if (this.m_issubpanel ) //&& labelsadded)
             {
+                if (spritepanel != null)
+                {
+                    if (firstrun) spritepanel.FitChildrenHorizontally();
+                    spritepanel.FitToContents();
+                }
                 this.FitChildrenVertically();
-                //this.FitChildrenHorizontally();
                 this.FitToContents();
-                //this.FitChildren();
             }
             running = false;
         }

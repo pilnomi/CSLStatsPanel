@@ -48,6 +48,7 @@ namespace CSLStatsPanel
             myConfigWindowPanel.name = "CSLStatsConfigurationPanel";
             myConfigWindowPanel.color = new Color32(0, 0, 255, 200);
             myConfigWindowPanel.eventStatsConfigChanged += new ConfigSettingsWindow.eventStatsConfigChangedHandler(myConfigWindowPanel_eventStatsConfigChanged);
+            myConfigWindowPanel.eventModeConfigChanged += new ConfigSettingsWindow.eventConfigModeChangedHandler(myConfigWindowPanel_eventModeConfigChanged);
             myresizepanel = (UIResizeHandle)this.AddUIComponent(typeof(UIResizeHandle));
             myresizepanel.name = "CSLStatsConfigurationResizePanel";
             myresizepanel.height = 20;
@@ -84,12 +85,20 @@ namespace CSLStatsPanel
             OnSizeChanged();
         }
 
+        void myConfigWindowPanel_eventModeConfigChanged(object sender, EventArgs e)
+        {
+            this.eventModeConfigChanged(sender, e);
+        }
+
         public void myConfigWindowPanel_eventStatsConfigChanged(object sender, EventArgs e)
         {
             this.eventStatsConfigChanged(sender, e);
         }
         public delegate void eventStatsConfigChangedHandler(object sender, EventArgs e);
         public event eventStatsConfigChangedHandler eventStatsConfigChanged;
+
+        public delegate void eventConfigModeChangedHandler(object sender, EventArgs e);
+        public event eventConfigModeChangedHandler eventModeConfigChanged;
 
 
 
@@ -239,6 +248,14 @@ namespace CSLStatsPanel
             miniMode.textColor = (CSLStatsPanelConfigSettings.m_MiniMode.value) ? selectedcolor : deselectedcolor;
             miniMode.eventClick += new MouseEventHandler(miniMode_eventClick);
 
+            UIButton showLabelsInMiniMode = p.AddUIComponent<UIButton>();
+            setcommonbuttonprops(showLabelsInMiniMode);
+            showLabelsInMiniMode.text = "Labels in Mini-Mode";
+            showLabelsInMiniMode.autoSize = true;
+            showLabelsInMiniMode.textColor = (CSLStatsPanelConfigSettings.m_ShowLabelsInMiniMode.value) ? selectedcolor : deselectedcolor;
+            showLabelsInMiniMode.eventClick += new MouseEventHandler(showLabelsInMiniMode_eventClick);
+
+
             p.FitChildrenHorizontally();
             p.FitToContents();
 
@@ -248,6 +265,14 @@ namespace CSLStatsPanel
             {
                 drawstatsconfigpanel(scw[i]);
             }
+        }
+
+        void showLabelsInMiniMode_eventClick(UIComponent component, UIMouseEventParameter eventParam)
+        {
+            CSLStatsPanelConfigSettings.m_ShowLabelsInMiniMode.value = !CSLStatsPanelConfigSettings.m_ShowLabelsInMiniMode.value;
+            ((UIButton)component).textColor = (CSLStatsPanelConfigSettings.m_ShowLabelsInMiniMode.value) ? selectedcolor : deselectedcolor;
+            component.parent.Focus();
+            eventStatsConfigChanged(this, EventArgs.Empty);
         }
 
         private void setcommonbuttonprops(UIButton b)
@@ -270,7 +295,7 @@ namespace CSLStatsPanel
             b.textColor = (CSLStatsPanelConfigSettings.m_MiniMode.value) ? selectedcolor : deselectedcolor;
             b.focusedColor = (CSLStatsPanelConfigSettings.m_MiniMode.value) ? selectedcolor : deselectedcolor;
             b.parent.Focus();
-            eventStatsConfigChanged(this, EventArgs.Empty);
+            eventModeConfigChanged(this, EventArgs.Empty);
         }
 
         void displaySummaries_eventClick(UIComponent component, UIMouseEventParameter eventParam)
@@ -386,6 +411,8 @@ namespace CSLStatsPanel
 
             eventStatsConfigChanged(this, EventArgs.Empty);
         }
+        public delegate void eventConfigModeChangedHandler(object sender, EventArgs e);
+        public event eventConfigModeChangedHandler eventModeConfigChanged;
         public delegate void eventStatsConfigChangedHandler(object sender, EventArgs e);
         public event eventStatsConfigChangedHandler eventStatsConfigChanged;
 
@@ -455,6 +482,24 @@ namespace CSLStatsPanel
                 m_r.value = r; m_g.value = g; m_b.value = b; m_a.value = a;
             }
         }
+
+        public static SavedFloat
+            windowx = new SavedFloat("ModCSLStatsPanelWindowPosX", Settings.gameSettingsFile, 0, true),
+            windowy = new SavedFloat("ModCSLStatsPanelWindowPosY", Settings.gameSettingsFile, 0, true),
+            windoww = new SavedFloat("ModCSLStatsPanelWindowPosW", Settings.gameSettingsFile, 700, true),
+            windowh = new SavedFloat("ModCSLStatsPanelWindowPosH", Settings.gameSettingsFile, 400, true);
+
+        public static SavedFloat
+            miniwindowx = new SavedFloat("ModCSLStatsPanelMiniWindowPosX", Settings.gameSettingsFile, 0, true),
+            miniwindowy = new SavedFloat("ModCSLStatsPanelMiniWindowPosY", Settings.gameSettingsFile, 0, true),
+            miniwindoww = new SavedFloat("ModCSLStatsPanelMiniWindowPosW", Settings.gameSettingsFile, 400, true),
+            miniwindowh = new SavedFloat("ModCSLStatsPanelMiniWindowPosH", Settings.gameSettingsFile, 200, true);
+
+        public static SavedInt
+            fontchange = new SavedInt("CSLStatsPanelTextScaleDelta", Settings.gameSettingsFile, 0, true),
+            minifontchange = new SavedInt("CSLStatsMiniPanelTextScaleDelta", Settings.gameSettingsFile, 0, true);
+
+        public static SavedBool m_ShowLabelsInMiniMode = new SavedBool(m_settingsprefix + "ShowLabelsInMiniMode", Settings.gameSettingsFile, true, true);
         public const string m_settingsprefix = "MODCSLStatsPanelConfig_";
         public const int m_minRefreshRate = 1, m_maxRefreshRate=255;
 
