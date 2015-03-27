@@ -71,10 +71,12 @@ namespace CSLStatsPanel
         {
             get
             {
+                
                 if ((m_resourceusedindex == -1 && m_resourceusedliteral == -1) ||
                     (m_resourcecapacityindex == -1 && m_resourcecapacityliteral == -1)) return -1;
                 float usedvalue = (m_resourceusedliteral == -1) ? m_scwlist[m_resourceusedindex].m_value : m_resourceusedliteral;
                 float capacityvalue = (m_resourcecapacityliteral == -1) ? m_scwlist[m_resourcecapacityindex].m_value : m_resourcecapacityliteral;
+                if (usedvalue > 0 && capacityvalue <= 0) return 1;
                 //statlog.log("capacity usage " + m_category + " " + usedvalue.ToString() + " / " + capacityvalue.ToString() +
                 //    " " + (usedvalue / capacityvalue).ToString());
                 return (usedvalue / capacityvalue);
