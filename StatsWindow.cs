@@ -74,35 +74,55 @@ namespace CSLStatsPanel
                 myStatsWindowPanel = (CSLStatsMasterWindow)UIView.GetAView().AddUIComponent(typeof(CSLStatsMasterWindow));
                 myStatsWindowPanel.name = "CSLStatsMasterPanel";
                 myStatsWindowPanel.eventStatsConfigReset += new CSLStatsMasterWindow.eventStatsConfigResetHandler(myStatsWindowPanel_eventStatsConfigReset);
+                myStatsWindowPanel.eventConfigTransparencyChanged += new CSLStatsMasterWindow.eventConfigTransparencyChangeHandler(myStatsWindowPanel_eventConfigTransparencyChanged);
                 updateText();
                 updateText();
             }
             else
             {
                 CSLStatsPanelConfigSettings.m_DisplayPanel.value = false;
-                GameObject.Destroy(myStatsWindowPanel);
-                myStatsWindowPanel = null;
+                resetstatswindow();
             }
+        }
+        public static bool doReset = false;
+        static void myStatsWindowPanel_eventConfigTransparencyChanged(object sender, EventArgs e)
+        {
+            statButton_eventClick(null, null);
+            doReset = true;
+            //statButton_eventClick(null, null);
         }
 
         static void myStatsWindowPanel_eventStatsConfigReset(object sender, EventArgs e)
         {
-            GameObject.Destroy(myStatsWindowPanel);
-            myStatsWindowPanel = null;           
+            //reset();         
+            statButton_eventClick(null, null);
+            doReset = true;
+            //statButton_eventClick(null, null);
         }
 
+        public static void resetstatswindow()
+        {
+            UIView.DestroyImmediate(myStatsWindowPanel);
+            myStatsWindowPanel = null;
+            running = false;
+        }
 
         public static void reset()
         {
-            GameObject.Destroy(myStatsWindowPanel);
-            myStatsWindowPanel = null;
+            resetstatswindow();
             initialized = false;
-            running = false;
         }
 
         public static void updateText()
         {
-            if (myStatsWindowPanel == null) return;
+            if (myStatsWindowPanel == null)
+            {
+                if (doReset)
+                {
+                    doReset = false;
+                    statButton_eventClick(null, null);
+                }else return;
+            }
             if (!initialized) return;
             if (running) return;
             running = true;
@@ -140,13 +160,13 @@ namespace CSLStatsPanel
             myStatsWindowPanel.reset();
             firstrun = true;
             isresetting = false;
-            
         }
+
         public void addStatsWindowPanel()
         {
             myStatsWindowPanel = (CSLStatusWindowPanel)this.AddUIComponent(typeof(CSLStatusWindowPanel));
             myStatsWindowPanel.name = "CSLStatsPanel";
-            myStatsWindowPanel.color = CSLStatsPanelConfigSettings.DefaultPanelColor;
+            myStatsWindowPanel.color = new Color32(0, 0, 0, 255);
         }
 
         UIButton configButton = null;
@@ -177,7 +197,8 @@ namespace CSLStatsPanel
             configButton.BringToFront();
             configButton.text = "Configure";
             configButton.eventClick += new MouseEventHandler(configButton_eventClick);
-
+            configButton.eventMouseEnter += new MouseEventHandler(configButton_eventMouseEnter);
+            configButton.eventMouseHover += new MouseEventHandler(configButton_eventMouseEnter);
             UIButton modetoggle = (UIButton)p.AddUIComponent(typeof(UIButton));
             modetoggle.width = 125;
             modetoggle.height = 20;
@@ -195,6 +216,8 @@ namespace CSLStatsPanel
             modetoggle.BringToFront();
             modetoggle.text = (CSLStatsPanelConfigSettings.m_MiniMode.value) ? "Expand" : "Mini";
             modetoggle.eventClick += new MouseEventHandler(modetoggle_eventClick);
+            modetoggle.eventMouseEnter += new MouseEventHandler(configButton_eventMouseEnter);
+            modetoggle.eventMouseHover += new MouseEventHandler(configButton_eventMouseEnter);
 
             modetoggle.spritePadding = new RectOffset(125/2, 0, 0, 0);
             //p.FitChildrenHorizontally();
@@ -202,6 +225,18 @@ namespace CSLStatsPanel
             //p.FitToContents();
             //myresizepanel.FitChildrenVertically();
             myresizepanel.FitChildrenVertically();
+            myresizepanel.eventMouseEnter += new MouseEventHandler(configButton_eventMouseEnter);
+            myresizepanel.eventMouseHover += new MouseEventHandler(configButton_eventMouseEnter);
+            if (CSLStatsPanelConfigSettings.m_EnableTransparency.value)
+            {
+                configButton.Hide();
+                modetoggle.Hide();
+            }
+        }
+
+        void configButton_eventMouseEnter(UIComponent component, UIMouseEventParameter eventParam)
+        {
+            MouseIsHovering(null);
         }
 
         void modetoggle_eventClick(UIComponent component, UIMouseEventParameter eventParam)
@@ -213,11 +248,48 @@ namespace CSLStatsPanel
 
         }
 
+        System.Timers.Timer mousehovertimer;
+        private void MouseIsHovering(UIMouseEventParameter p)
+        {
+            if (mousehovertimer != null) mousehovertimer.Enabled = false;
+            mousehovertimer = new System.Timers.Timer(50);
+            mousehovertimer.Elapsed += new System.Timers.ElapsedEventHandler(mousehovertimer_Elapsed);
+            myStatsWindowPanel.backgroundSprite = "GenericPanel";
+            headerpanel.backgroundSprite = "GenericPanel";
+            myresizepanel.backgroundSprite = "GenericPanel";
+            headertext.Show();
+            UIButton[] mybuttons = myresizepanel.GetComponentsInChildren<UIButton>();
+            foreach (UIButton b in mybuttons)
+                b.Show();
+        }
+
+        protected override void OnMouseHover(UIMouseEventParameter p)
+        {
+            MouseIsHovering(p);
+        }
+
+        void mousehovertimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
+        {
+            mousehovertimer.Enabled = false;
+            myStatsWindowPanel.backgroundSprite = "";
+            headerpanel.backgroundSprite = "";
+            myresizepanel.backgroundSprite = "";
+            headertext.Hide();
+            UIButton[] mybuttons = myresizepanel.GetComponentsInChildren<UIButton>();
+            foreach (UIButton b in mybuttons)
+                b.Hide();
+        }
+        protected override void OnMouseLeave(UIMouseEventParameter p)
+        {
+            if (!CSLStatsPanelConfigSettings.m_EnableTransparency.value) return;
+            if (mousehovertimer == null) return;
+            mousehovertimer.Enabled = true;
+        }
 
         public void init()
         {
             this.color = CSLStatsPanelConfigSettings.DefaultPanelColor;
-            this.backgroundSprite = "GenericPanel";
+            if (!CSLStatsPanelConfigSettings.m_EnableTransparency.value) this.backgroundSprite = "GenericPanel";
             this.autoLayoutDirection = LayoutDirection.Vertical;
             this.autoLayoutStart = LayoutStart.TopLeft;
             this.autoLayoutPadding = new RectOffset(0, 0, 0, 0);
@@ -225,11 +297,13 @@ namespace CSLStatsPanel
 
             headerpanel = (UIPanel)this.AddUIComponent(typeof(UIPanel));
             headerpanel.height = 20;
-            headerpanel.backgroundSprite = "GenericPanel";
-            headerpanel.color = new Color32(0, 0, 100, 100);
+            if (!CSLStatsPanelConfigSettings.m_EnableTransparency.value) headerpanel.backgroundSprite = "GenericPanel";
+            headerpanel.color = new Color32(0, 0, 100, 200);
 
             headertext = headerpanel.AddUIComponent<UILabel>();
             headertext.text = "CSL Stats Panel";
+            if (CSLStatsPanelConfigSettings.m_EnableTransparency.value) headertext.Hide();
+
             headertext.CenterToParent();
 
             addStatsWindowPanel();
@@ -237,8 +311,8 @@ namespace CSLStatsPanel
             myresizepanel = (UIResizeHandle)this.AddUIComponent(typeof(UIResizeHandle));
             myresizepanel.name = "CSLStatsResizePanel";
             myresizepanel.height = 20;
-            myresizepanel.color = new Color32(0, 0, 100, 100);
-            myresizepanel.backgroundSprite = "GenericPanel";
+            myresizepanel.color = new Color32(0, 0, 100, 200);
+            if (!CSLStatsPanelConfigSettings.m_EnableTransparency.value) myresizepanel.backgroundSprite = "GenericPanel";
             //myresizepanel.anchor = UIAnchorStyle.Bottom;
             //myresizepanel.anchor = UIAnchorStyle.Right;
             resizelabel = myresizepanel.AddUIComponent<UILabel>();
@@ -255,7 +329,9 @@ namespace CSLStatsPanel
         }
         public override void OnDestroy()
         {
-            if (myconfigwindow != null) GameObject.Destroy(myconfigwindow);
+            this.autoSize = false;
+            this.autoLayout = false;
+            if (myconfigwindow != null) UIView.DestroyImmediate(myconfigwindow);
             base.OnDestroy();
         }
 
@@ -268,14 +344,23 @@ namespace CSLStatsPanel
                 myconfigwindow.eventStatsConfigChanged += new ConfigWindow.eventStatsConfigChangedHandler(myconfigwindow_eventStatsConfigChanged);
                 myconfigwindow.eventModeConfigChanged += new ConfigWindow.eventConfigModeChangedHandler(myconfigwindow_eventModeConfigChanged);
                 myconfigwindow.eventStatsConfigReset += new ConfigWindow.eventStatsConfigResetHandler(myconfigwindow_eventStatsConfigReset);
+                myconfigwindow.eventConfigTransparencyChanged += new ConfigWindow.eventConfigTransparencyChangeHandler(myconfigwindow_eventConfigTransparencyChanged);
             }
             else
             {
-                GameObject.Destroy(myconfigwindow);
+                UIView.DestroyImmediate(myconfigwindow);
                 myconfigwindow = null;
             }
-            component.parent.Focus();
+            if (component != null)
+                component.parent.Focus();
         }
+
+        void myconfigwindow_eventConfigTransparencyChanged(object sender, EventArgs e)
+        {
+            eventConfigTransparencyChanged(sender, e);
+        }
+        public delegate void eventConfigTransparencyChangeHandler(object sender, EventArgs e);
+        public event eventConfigTransparencyChangeHandler eventConfigTransparencyChanged;
 
         void myconfigwindow_eventStatsConfigReset(object sender, EventArgs e)
         {
@@ -411,6 +496,7 @@ namespace CSLStatsPanel
             if (dragging) this.position = new Vector3(this.position.x + p.moveDelta.x,
              this.position.y + p.moveDelta.y,
              this.position.z);
+            if (CSLStatsPanelConfigSettings.m_EnableTransparency.value) MouseIsHovering(p);
         }
 
         bool childrenareclipped
@@ -477,6 +563,7 @@ namespace CSLStatsPanel
             zooming = false;
             base.OnMouseWheel(p);
         }
+
     }
 
     public class CSLStatusWindowSubPanel : CSLStatusWindowPanel
@@ -486,7 +573,8 @@ namespace CSLStatsPanel
             m_issubpanel = true;
             base.m_issubpanel = true;
             this.autoSize = true;
-            this.color = new Color32(225, 225, 225, 200);
+            this.backgroundSprite = "GenericPanel";
+            this.color = new Color32(225, 225, 225, 255);
 
         }
 
@@ -512,7 +600,7 @@ namespace CSLStatsPanel
 
         public CSLStatusWindowPanel()
         {
-            this.backgroundSprite = "GenericPanel";
+            if (!CSLStatsPanelConfigSettings.m_EnableTransparency.value) this.backgroundSprite = "GenericPanel";
             this.autoLayoutDirection = LayoutDirection.Vertical;
             this.autoLayoutStart = LayoutStart.TopLeft;
             this.autoLayoutPadding = new RectOffset(1, 1, 1, 1);
@@ -521,13 +609,13 @@ namespace CSLStatsPanel
             m_textfields = new List<CSLStatsPanelLabel>();
         }
 
+
         public void reset()
         {
             foreach (KeyValuePair<string, CSLStatusWindowSubPanel> p in m_categories)
             {
                 this.RemoveUIComponent(p.Value);
-                UnityEngine.Object.Destroy(p.Value);
-                // GameObject.Destroy(p.Value);
+                UIView.DestroyImmediate(p.Value);
             }
             m_categories = new Dictionary<string, CSLStatusWindowSubPanel>();
             m_textfields = new List<CSLStatsPanelLabel>();
@@ -608,10 +696,10 @@ namespace CSLStatsPanel
                 if (categorydata[i].capacityUsage > -1 && CSLStatsPanelConfigSettings.m_EnablePanelColors.value)
                 {
                     if (categorydata[i].capacityUsage > .95)
-                        m_categories[currentcat].color = new Color32(255, 0, 0, 200); //red
+                        m_categories[currentcat].color = new Color32(255, 0, 0, 255); //red
                     else if (categorydata[i].capacityUsage > .75)
-                        m_categories[currentcat].color = new Color32(255, 255, 0, 200); //yellow
-                    else m_categories[currentcat].color = new Color32(0, 255, 0, 200); //green
+                        m_categories[currentcat].color = new Color32(255, 255, 0, 255); //yellow
+                    else m_categories[currentcat].color = new Color32(0, 255, 0, 255); //green
                 }
 
                 List<StatisticsClassWrapper> myscwlist = categorydata[i].activeStats;
@@ -731,6 +819,8 @@ namespace CSLStatsPanel
         {
 
             m_textfields = new List<CSLStatsPanelLabel>();
+            this.autoLayout = false;
+            this.autoSize = false;
             initialized = false;
             running = false;
         }

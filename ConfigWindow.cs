@@ -19,7 +19,7 @@ namespace CSLStatsPanel
         public ConfigWindow()
         {
 
-            this.color = new Color32(0, 0, 255, 200);
+            //this.color = new Color32(0, 0, 100, 200);
             this.backgroundSprite = "GenericPanel";
             this.autoLayoutDirection = LayoutDirection.Vertical;
             this.autoLayoutStart = LayoutStart.TopLeft;
@@ -37,7 +37,7 @@ namespace CSLStatsPanel
             headerpanel = (UIPanel)this.AddUIComponent(typeof(UIPanel));
             headerpanel.height = 20;
             headerpanel.backgroundSprite = "GenericPanel";
-            headerpanel.color = new Color32(0, 0, 100, 100);
+            headerpanel.color = new Color32(0, 0, 100, 200);
 
             headertext = headerpanel.AddUIComponent<UILabel>();
             headertext.text = "CSL Stats Panel - Configuration";
@@ -46,14 +46,15 @@ namespace CSLStatsPanel
             myConfigWindowPanel = (ConfigSettingsWindow)this.AddUIComponent(typeof(ConfigSettingsWindow));
             myConfigWindowPanel.width = this.width;
             myConfigWindowPanel.name = "CSLStatsConfigurationPanel";
-            myConfigWindowPanel.color = new Color32(0, 0, 255, 200);
+            myConfigWindowPanel.color = new Color32(0, 0, 0, 255);
             myConfigWindowPanel.eventStatsConfigChanged += new ConfigSettingsWindow.eventStatsConfigChangedHandler(myConfigWindowPanel_eventStatsConfigChanged);
             myConfigWindowPanel.eventModeConfigChanged += new ConfigSettingsWindow.eventConfigModeChangedHandler(myConfigWindowPanel_eventModeConfigChanged);
             myConfigWindowPanel.eventConfigReset += new ConfigSettingsWindow.eventConfigResetHandler(myConfigWindowPanel_eventConfigReset);
+            myConfigWindowPanel.eventConfigTransparencyChanged += new ConfigSettingsWindow.eventConfigTransparencyChangeHandler(myConfigWindowPanel_eventConfigTransparencyChanged);
             myresizepanel = (UIResizeHandle)this.AddUIComponent(typeof(UIResizeHandle));
             myresizepanel.name = "CSLStatsConfigurationResizePanel";
             myresizepanel.height = 20;
-            myresizepanel.color = new Color32(0, 0, 100, 100);
+            myresizepanel.color = new Color32(0, 0, 100, 200);
             myresizepanel.backgroundSprite = "GenericPanel";
             //myresizepanel.anchor = UIAnchorStyle.Bottom;
             //myresizepanel.anchor = UIAnchorStyle.Right;
@@ -86,6 +87,12 @@ namespace CSLStatsPanel
             OnSizeChanged();
         }
 
+        void myConfigWindowPanel_eventConfigTransparencyChanged(object sender, EventArgs e)
+        {
+            eventConfigTransparencyChanged(sender, e);
+            CloseButton_eventClick(null, null);
+        }
+
         void myConfigWindowPanel_eventConfigReset(object sender, EventArgs e)
         {
             eventStatsConfigReset(sender, e);
@@ -111,11 +118,13 @@ namespace CSLStatsPanel
         public event eventConfigModeChangedHandler eventModeConfigChanged;
 
 
+        public delegate void eventConfigTransparencyChangeHandler(object sender, EventArgs e);
+        public event eventConfigTransparencyChangeHandler eventConfigTransparencyChanged;
 
 
         void CloseButton_eventClick(UIComponent component, UIMouseEventParameter eventParam)
         {
-            GameObject.Destroy(this);
+            UIView.DestroyImmediate(this);
         }
 
         protected override void OnMouseDown(UIMouseEventParameter p)
@@ -171,7 +180,7 @@ namespace CSLStatsPanel
         public override void Start()
         {
             base.Start();
-            this.color = new Color32(0, 0, 255, 200);
+            //this.color = new Color32(0, 0, 100, 200);
             this.backgroundSprite = "GenericPanel";
             this.autoLayoutDirection = LayoutDirection.Vertical;
             this.autoLayoutStart = LayoutStart.TopLeft;
@@ -265,6 +274,13 @@ namespace CSLStatsPanel
             showLabelsInMiniMode.textColor = (CSLStatsPanelConfigSettings.m_ShowLabelsInMiniMode.value) ? selectedcolor : deselectedcolor;
             showLabelsInMiniMode.eventClick += new MouseEventHandler(showLabelsInMiniMode_eventClick);
 
+            UIButton enableTransparency = p.AddUIComponent<UIButton>();
+            setcommonbuttonprops(enableTransparency);
+            enableTransparency.text = "Transparency";
+            enableTransparency.textColor = (CSLStatsPanelConfigSettings.m_EnableTransparency.value) ? selectedcolor : deselectedcolor;
+            enableTransparency.eventClick += new MouseEventHandler(enableTransparency_eventClick);
+
+
             UIButton resetConfig = p.AddUIComponent<UIButton>();
             setcommonbuttonprops(resetConfig);
             resetConfig.text = "Reset Config";
@@ -282,6 +298,17 @@ namespace CSLStatsPanel
                 drawstatsconfigpanel(scw[i]);
             }
         }
+
+        void enableTransparency_eventClick(UIComponent component, UIMouseEventParameter eventParam)
+        {
+            CSLStatsPanelConfigSettings.m_EnableTransparency.value = !CSLStatsPanelConfigSettings.m_EnableTransparency.value;
+            ((UIButton)component).textColor = (CSLStatsPanelConfigSettings.m_EnableTransparency.value) ? selectedcolor : deselectedcolor;
+            //component.parent.Focus();
+            eventConfigTransparencyChanged(this, EventArgs.Empty);
+        }
+
+        public delegate void eventConfigTransparencyChangeHandler(object sender, EventArgs e);
+        public event eventConfigTransparencyChangeHandler eventConfigTransparencyChanged;
 
         void resetConfig_eventClick(UIComponent component, UIMouseEventParameter eventParam)
         {
@@ -443,8 +470,8 @@ namespace CSLStatsPanel
         public delegate void eventStatsConfigChangedHandler(object sender, EventArgs e);
         public event eventStatsConfigChangedHandler eventStatsConfigChanged;
 
-        Color32 selectedcolor = new Color32(0, 255, 0, 255),
-            deselectedcolor = new Color32(255, 0, 0, 255);
+        Color32 selectedcolor = new Color32(0, 200, 0, 255),
+            deselectedcolor = new Color32(200, 0, 0, 255);
 
         void statsubpanel_eventClick(UIComponent component, UIMouseEventParameter eventParam)
         {
@@ -480,7 +507,7 @@ namespace CSLStatsPanel
             private string m_name = "defaultPanelColor";
             private SavedInt m_r, m_g, m_b, m_a;
 
-            public customColor(string name)
+            public customColor(string name, int default_r=0, int default_g=0, int default_b=255, int default_a=200)
             {
                 m_name = name;
                 initVars();
@@ -498,12 +525,12 @@ namespace CSLStatsPanel
                 }
             }
 
-            private void initVars()
+            private void initVars(int default_r = 0, int default_g = 0, int default_b = 255, int default_a = 200)
             {
-                m_r = new SavedInt(m_settingsprefix + "SavedColor_" + m_name + "R", Settings.gameSettingsFile, 0, true);
-                m_g = new SavedInt(m_settingsprefix + "SavedColor_" + m_name + "G", Settings.gameSettingsFile, 0, true);
-                m_b = new SavedInt(m_settingsprefix + "SavedColor_" + m_name + "B", Settings.gameSettingsFile, 255, true);
-                m_a = new SavedInt(m_settingsprefix + "SavedColor_" + m_name + "A", Settings.gameSettingsFile, 200, true);
+                m_r = new SavedInt(m_settingsprefix + "SavedColor_" + m_name + "R", Settings.gameSettingsFile, default_r, true);
+                m_g = new SavedInt(m_settingsprefix + "SavedColor_" + m_name + "G", Settings.gameSettingsFile, default_g, true);
+                m_b = new SavedInt(m_settingsprefix + "SavedColor_" + m_name + "B", Settings.gameSettingsFile, default_b, true);
+                m_a = new SavedInt(m_settingsprefix + "SavedColor_" + m_name + "A", Settings.gameSettingsFile, default_a, true);
 
                 if (!CSLStatsPanelConfigSettings.configurationsettings.Contains(m_r))
                     CSLStatsPanelConfigSettings.configurationsettings.Add(m_r);
@@ -514,13 +541,14 @@ namespace CSLStatsPanel
                 if (!CSLStatsPanelConfigSettings.configurationsettings.Contains(m_a))
                     CSLStatsPanelConfigSettings.configurationsettings.Add(m_a);
             }
-
+            /*
             public customColor(string name, int r, int g, int b, int a)
             {
                 m_name = name;
                 initVars();
                 m_r.value = r; m_g.value = g; m_b.value = b; m_a.value = a;
             }
+             */ 
         }
         public class mySavedFloat
         {
@@ -598,6 +626,7 @@ namespace CSLStatsPanel
 
         public static mySavedBool m_EnablePanelColors = new mySavedBool(m_settingsprefix + "EnablePanelColors", true);
         public static mySavedBool m_EnablePanelSummaries = new mySavedBool(m_settingsprefix + "EnablePanelSummaries", true);
+        public static mySavedBool m_EnableTransparency = new mySavedBool(m_settingsprefix + "EnableTransparency", true);
         private static mySavedInt m_PanelRefreshRate = new mySavedInt(m_settingsprefix + "RefreshRate", 3);
         public static int PanelRefreshRate
         {
@@ -609,11 +638,17 @@ namespace CSLStatsPanel
             }
         }
 
-        private static customColor m_defaultPanelColor = new customColor("defaultPanelColor");
+        private static customColor m_defaultPanelColor = new customColor("defaultPanelColor", 0, 0, 255, 255);
+        private static customColor m_transparentPanelColor = new customColor("transparentPanelColor", 0, 0, 0, 0);
         public static Color32 DefaultPanelColor
         {
             get { return m_defaultPanelColor.value; }
             set { m_defaultPanelColor.value = value; }
+        }
+        public static Color32 TransparentPanelColor
+        {
+            get { return m_transparentPanelColor.value; }
+            set { m_transparentPanelColor.value = value; }
         }
 
         private static List<StatisticsCategoryWrapper> m_categories

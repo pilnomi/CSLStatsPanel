@@ -347,10 +347,8 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                 statstopull.Add(new StatisticsClassWrapper(cat, "Amount", StatisticType.DeadAmount, 1, 1, ""));
                 statstopull.Add(new StatisticsClassWrapper(cat, "Capacity", StatisticType.DeadCapacity, 1, 1, ""));
                 statstopull.Add(new StatisticsClassWrapper(cat, "Cremate Capacity", StatisticType.CremateCapacity, 1000, 1, "K"));
-                
-                if (statstopull.Last().m_value > 0)
-                    catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Amount", "Cremate Capacity", "GenericPanel", true));
-                else catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Amount", "Capacity", "InfoIconHealthPressed", true));
+                float totaldeathcap = statstopull[statstopull.Count() - 2].m_value + statstopull[statstopull.Count - 1].m_value;
+                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Amount", totaldeathcap.ToString(), "InfoIconHealthPressed", true));
                 statstopull = new List<StatisticsClassWrapper>();
             }
 
