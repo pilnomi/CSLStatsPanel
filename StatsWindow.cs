@@ -46,6 +46,7 @@ namespace CSLStatsPanel
             
             initialized = true;
             running = false;
+            if (CSLStatsPanelConfigSettings.m_DisplayPanel.value) statButton_eventClick(null, null);
 
         }
 
@@ -67,18 +68,27 @@ namespace CSLStatsPanel
         {
             if (myStatsWindowPanel == null)
             {
+                CSLStatsPanelConfigSettings.m_DisplayPanel.value = true;
                 UIView uiView = GameObject.FindObjectOfType<UIView>();
                 if (uiView == null) return;
                 myStatsWindowPanel = (CSLStatsMasterWindow)UIView.GetAView().AddUIComponent(typeof(CSLStatsMasterWindow));
                 myStatsWindowPanel.name = "CSLStatsMasterPanel";
+                myStatsWindowPanel.eventStatsConfigReset += new CSLStatsMasterWindow.eventStatsConfigResetHandler(myStatsWindowPanel_eventStatsConfigReset);
                 updateText();
                 updateText();
             }
             else
             {
+                CSLStatsPanelConfigSettings.m_DisplayPanel.value = false;
                 GameObject.Destroy(myStatsWindowPanel);
                 myStatsWindowPanel = null;
             }
+        }
+
+        static void myStatsWindowPanel_eventStatsConfigReset(object sender, EventArgs e)
+        {
+            GameObject.Destroy(myStatsWindowPanel);
+            myStatsWindowPanel = null;           
         }
 
 
@@ -237,6 +247,7 @@ namespace CSLStatsPanel
             setdefaultpos();
         }
 
+
         public override void Start()
         {
             base.Start();
@@ -256,6 +267,7 @@ namespace CSLStatsPanel
                 myconfigwindow = (ConfigWindow)UIView.GetAView().AddUIComponent(typeof(ConfigWindow));
                 myconfigwindow.eventStatsConfigChanged += new ConfigWindow.eventStatsConfigChangedHandler(myconfigwindow_eventStatsConfigChanged);
                 myconfigwindow.eventModeConfigChanged += new ConfigWindow.eventConfigModeChangedHandler(myconfigwindow_eventModeConfigChanged);
+                myconfigwindow.eventStatsConfigReset += new ConfigWindow.eventStatsConfigResetHandler(myconfigwindow_eventStatsConfigReset);
             }
             else
             {
@@ -264,6 +276,14 @@ namespace CSLStatsPanel
             }
             component.parent.Focus();
         }
+
+        void myconfigwindow_eventStatsConfigReset(object sender, EventArgs e)
+        {
+            eventStatsConfigReset(sender, e);
+        }
+        public delegate void eventStatsConfigResetHandler(object sender, EventArgs e);
+        public event eventStatsConfigResetHandler eventStatsConfigReset;
+
 
         void myconfigwindow_eventModeConfigChanged(object sender, EventArgs e)
         {
@@ -281,11 +301,12 @@ namespace CSLStatsPanel
 
         void setdefaultpos()
         {
-            SavedFloat windowx = (!CSLStatsPanelConfigSettings.m_MiniMode.value) ? CSLStatsPanelConfigSettings.windowx : CSLStatsPanelConfigSettings.miniwindowx,
+            
+            CSLStatsPanelConfigSettings.mySavedFloat windowx = (!CSLStatsPanelConfigSettings.m_MiniMode.value) ? CSLStatsPanelConfigSettings.windowx : CSLStatsPanelConfigSettings.miniwindowx,
                 windowy = (!CSLStatsPanelConfigSettings.m_MiniMode.value) ? CSLStatsPanelConfigSettings.windowy : CSLStatsPanelConfigSettings.miniwindowy,
                 windoww = (!CSLStatsPanelConfigSettings.m_MiniMode.value) ? CSLStatsPanelConfigSettings.windoww : CSLStatsPanelConfigSettings.miniwindoww,
                 windowh = (!CSLStatsPanelConfigSettings.m_MiniMode.value) ? CSLStatsPanelConfigSettings.windowh : CSLStatsPanelConfigSettings.miniwindowh;
-            SavedInt fontchange = (!CSLStatsPanelConfigSettings.m_MiniMode.value) ? CSLStatsPanelConfigSettings.fontchange : CSLStatsPanelConfigSettings.minifontchange;
+            CSLStatsPanelConfigSettings.mySavedInt fontchange = (!CSLStatsPanelConfigSettings.m_MiniMode.value) ? CSLStatsPanelConfigSettings.fontchange : CSLStatsPanelConfigSettings.minifontchange;
 
 
             this.position = new Vector3(windowx.value, windowy.value, this.position.z);
@@ -333,7 +354,7 @@ namespace CSLStatsPanel
         }
         protected override void OnSizeChanged()
         {
-            SavedFloat windowx = (!CSLStatsPanelConfigSettings.m_MiniMode.value) ? CSLStatsPanelConfigSettings.windowx : CSLStatsPanelConfigSettings.miniwindowx,
+            CSLStatsPanelConfigSettings.mySavedFloat windowx = (!CSLStatsPanelConfigSettings.m_MiniMode.value) ? CSLStatsPanelConfigSettings.windowx : CSLStatsPanelConfigSettings.miniwindowx,
                 windowy = (!CSLStatsPanelConfigSettings.m_MiniMode.value) ? CSLStatsPanelConfigSettings.windowy : CSLStatsPanelConfigSettings.miniwindowy,
                 windoww = (!CSLStatsPanelConfigSettings.m_MiniMode.value) ? CSLStatsPanelConfigSettings.windoww : CSLStatsPanelConfigSettings.miniwindoww,
                 windowh = (!CSLStatsPanelConfigSettings.m_MiniMode.value) ? CSLStatsPanelConfigSettings.windowh : CSLStatsPanelConfigSettings.miniwindowh;
@@ -371,7 +392,7 @@ namespace CSLStatsPanel
         {
             if (dragging)
             {
-                SavedFloat windowx = (!CSLStatsPanelConfigSettings.m_MiniMode.value) ? CSLStatsPanelConfigSettings.windowx : CSLStatsPanelConfigSettings.miniwindowx,
+                CSLStatsPanelConfigSettings.mySavedFloat windowx = (!CSLStatsPanelConfigSettings.m_MiniMode.value) ? CSLStatsPanelConfigSettings.windowx : CSLStatsPanelConfigSettings.miniwindowx,
                     windowy = (!CSLStatsPanelConfigSettings.m_MiniMode.value) ? CSLStatsPanelConfigSettings.windowy : CSLStatsPanelConfigSettings.miniwindowy,
                     windoww = (!CSLStatsPanelConfigSettings.m_MiniMode.value) ? CSLStatsPanelConfigSettings.windoww : CSLStatsPanelConfigSettings.miniwindoww,
                     windowh = (!CSLStatsPanelConfigSettings.m_MiniMode.value) ? CSLStatsPanelConfigSettings.windowh : CSLStatsPanelConfigSettings.miniwindowh;
@@ -411,7 +432,7 @@ namespace CSLStatsPanel
         bool zooming = false;
         protected override void OnMouseWheel(UIMouseEventParameter p)
         {
-            SavedInt fontchange = (!CSLStatsPanelConfigSettings.m_MiniMode.value) ? CSLStatsPanelConfigSettings.fontchange : CSLStatsPanelConfigSettings.minifontchange;
+            CSLStatsPanelConfigSettings.mySavedInt fontchange = (!CSLStatsPanelConfigSettings.m_MiniMode.value) ? CSLStatsPanelConfigSettings.fontchange : CSLStatsPanelConfigSettings.minifontchange;
             if (!zooming)
             {
                 float wd = p.wheelDelta;
@@ -610,7 +631,7 @@ namespace CSLStatsPanel
                         if (m_categories[currentcat].m_stringbuilder.Count() == 0)
                         {
                             if (CSLStatsPanelConfigSettings.m_MiniMode.value 
-                                && !CSLStatsPanelConfigSettings.m_ShowLabelsInMiniMode)
+                                && !CSLStatsPanelConfigSettings.m_ShowLabelsInMiniMode.value)
                             {
                                 if (categorydata[i].m_showstatsummary && categorydata[i].capacityUsage > -1)
                                 {

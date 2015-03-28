@@ -26,7 +26,7 @@ namespace CSLStatsPanel
             this.autoLayout = true;
             this.autoLayoutPadding = new RectOffset(0, 0, 0, 0);
             this.width = 1000;
-            this.height = 650;
+            this.height = 680;
    
 
         }
@@ -49,6 +49,7 @@ namespace CSLStatsPanel
             myConfigWindowPanel.color = new Color32(0, 0, 255, 200);
             myConfigWindowPanel.eventStatsConfigChanged += new ConfigSettingsWindow.eventStatsConfigChangedHandler(myConfigWindowPanel_eventStatsConfigChanged);
             myConfigWindowPanel.eventModeConfigChanged += new ConfigSettingsWindow.eventConfigModeChangedHandler(myConfigWindowPanel_eventModeConfigChanged);
+            myConfigWindowPanel.eventConfigReset += new ConfigSettingsWindow.eventConfigResetHandler(myConfigWindowPanel_eventConfigReset);
             myresizepanel = (UIResizeHandle)this.AddUIComponent(typeof(UIResizeHandle));
             myresizepanel.name = "CSLStatsConfigurationResizePanel";
             myresizepanel.height = 20;
@@ -85,6 +86,12 @@ namespace CSLStatsPanel
             OnSizeChanged();
         }
 
+        void myConfigWindowPanel_eventConfigReset(object sender, EventArgs e)
+        {
+            eventStatsConfigReset(sender, e);
+            CloseButton_eventClick(null, null);
+        }
+
         void myConfigWindowPanel_eventModeConfigChanged(object sender, EventArgs e)
         {
             this.eventModeConfigChanged(sender, e);
@@ -94,6 +101,9 @@ namespace CSLStatsPanel
         {
             this.eventStatsConfigChanged(sender, e);
         }
+        public delegate void eventStatsConfigResetHandler(object sender, EventArgs e);
+        public event eventStatsConfigResetHandler eventStatsConfigReset;
+
         public delegate void eventStatsConfigChangedHandler(object sender, EventArgs e);
         public event eventStatsConfigChangedHandler eventStatsConfigChanged;
 
@@ -255,6 +265,12 @@ namespace CSLStatsPanel
             showLabelsInMiniMode.textColor = (CSLStatsPanelConfigSettings.m_ShowLabelsInMiniMode.value) ? selectedcolor : deselectedcolor;
             showLabelsInMiniMode.eventClick += new MouseEventHandler(showLabelsInMiniMode_eventClick);
 
+            UIButton resetConfig = p.AddUIComponent<UIButton>();
+            setcommonbuttonprops(resetConfig);
+            resetConfig.text = "Reset Config";
+            resetConfig.textColor = resetConfig.focusedTextColor;
+            resetConfig.eventClick += new MouseEventHandler(resetConfig_eventClick);
+
 
             p.FitChildrenHorizontally();
             p.FitToContents();
@@ -265,6 +281,13 @@ namespace CSLStatsPanel
             {
                 drawstatsconfigpanel(scw[i]);
             }
+        }
+
+        void resetConfig_eventClick(UIComponent component, UIMouseEventParameter eventParam)
+        {
+            CSLStatsPanelConfigSettings.resetConfig();
+            eventConfigReset(this, EventArgs.Empty);
+            
         }
 
         void showLabelsInMiniMode_eventClick(UIComponent component, UIMouseEventParameter eventParam)
@@ -311,8 +334,8 @@ namespace CSLStatsPanel
         void useColors_eventClick(UIComponent component, UIMouseEventParameter eventParam)
         {
             CSLStatsPanelConfigSettings.m_EnablePanelColors.value = !CSLStatsPanelConfigSettings.m_EnablePanelColors.value;
-            useColors.textColor = (CSLStatsPanelConfigSettings.m_EnablePanelColors) ? selectedcolor : deselectedcolor;
-            useColors.focusedColor = (CSLStatsPanelConfigSettings.m_EnablePanelColors) ? selectedcolor : deselectedcolor;
+            useColors.textColor = (CSLStatsPanelConfigSettings.m_EnablePanelColors.value) ? selectedcolor : deselectedcolor;
+            useColors.focusedColor = (CSLStatsPanelConfigSettings.m_EnablePanelColors.value) ? selectedcolor : deselectedcolor;
             useColors.parent.Focus();
             eventStatsConfigChanged(this, EventArgs.Empty);
         }
@@ -411,6 +434,10 @@ namespace CSLStatsPanel
 
             eventStatsConfigChanged(this, EventArgs.Empty);
         }
+        public delegate void eventConfigResetHandler(object sender, EventArgs e);
+        public event eventConfigResetHandler eventConfigReset;
+
+        
         public delegate void eventConfigModeChangedHandler(object sender, EventArgs e);
         public event eventConfigModeChangedHandler eventModeConfigChanged;
         public delegate void eventStatsConfigChangedHandler(object sender, EventArgs e);
@@ -444,7 +471,11 @@ namespace CSLStatsPanel
 
     public static class CSLStatsPanelConfigSettings
     {
-        class customColor
+        public const string m_settingsprefix = "MODCSLStatsPanelConfig_";
+        public const int m_minRefreshRate = 1, m_maxRefreshRate = 255;
+        public static List<SavedValue> configurationsettings = new List<SavedValue>();
+        
+        public class customColor
         {
             private string m_name = "defaultPanelColor";
             private SavedInt m_r, m_g, m_b, m_a;
@@ -473,6 +504,15 @@ namespace CSLStatsPanel
                 m_g = new SavedInt(m_settingsprefix + "SavedColor_" + m_name + "G", Settings.gameSettingsFile, 0, true);
                 m_b = new SavedInt(m_settingsprefix + "SavedColor_" + m_name + "B", Settings.gameSettingsFile, 255, true);
                 m_a = new SavedInt(m_settingsprefix + "SavedColor_" + m_name + "A", Settings.gameSettingsFile, 200, true);
+
+                if (!CSLStatsPanelConfigSettings.configurationsettings.Contains(m_r))
+                    CSLStatsPanelConfigSettings.configurationsettings.Add(m_r);
+                if (!CSLStatsPanelConfigSettings.configurationsettings.Contains(m_g))
+                    CSLStatsPanelConfigSettings.configurationsettings.Add(m_g);
+                if (!CSLStatsPanelConfigSettings.configurationsettings.Contains(m_b))
+                    CSLStatsPanelConfigSettings.configurationsettings.Add(m_b);
+                if (!CSLStatsPanelConfigSettings.configurationsettings.Contains(m_a))
+                    CSLStatsPanelConfigSettings.configurationsettings.Add(m_a);
             }
 
             public customColor(string name, int r, int g, int b, int a)
@@ -482,35 +522,86 @@ namespace CSLStatsPanel
                 m_r.value = r; m_g.value = g; m_b.value = b; m_a.value = a;
             }
         }
+        public class mySavedFloat
+        {
+            SavedFloat f = null;
+            public mySavedFloat(string name, float defaultvalue)
+            {
+                f = new SavedFloat(name, Settings.gameSettingsFile, defaultvalue, true);
+                if (!CSLStatsPanelConfigSettings.configurationsettings.Contains(f))
+                    CSLStatsPanelConfigSettings.configurationsettings.Add(f);
+            }
 
-        public static SavedFloat
-            windowx = new SavedFloat("ModCSLStatsPanelWindowPosX", Settings.gameSettingsFile, 0, true),
-            windowy = new SavedFloat("ModCSLStatsPanelWindowPosY", Settings.gameSettingsFile, 0, true),
-            windoww = new SavedFloat("ModCSLStatsPanelWindowPosW", Settings.gameSettingsFile, 700, true),
-            windowh = new SavedFloat("ModCSLStatsPanelWindowPosH", Settings.gameSettingsFile, 400, true);
+            public float value
+            {
+                get { return f.value; }
+                set{f.value = value;}
+            }
 
-        public static SavedFloat
-            miniwindowx = new SavedFloat("ModCSLStatsPanelMiniWindowPosX", Settings.gameSettingsFile, 0, true),
-            miniwindowy = new SavedFloat("ModCSLStatsPanelMiniWindowPosY", Settings.gameSettingsFile, 0, true),
-            miniwindoww = new SavedFloat("ModCSLStatsPanelMiniWindowPosW", Settings.gameSettingsFile, 400, true),
-            miniwindowh = new SavedFloat("ModCSLStatsPanelMiniWindowPosH", Settings.gameSettingsFile, 200, true);
+        }
+        public class mySavedInt
+        {
+            SavedInt f = null;
+            public mySavedInt(string name, int defaultvalue)
+            {
+                f = new SavedInt(name, Settings.gameSettingsFile, defaultvalue, true);
+                if (!CSLStatsPanelConfigSettings.configurationsettings.Contains(f))
+                    CSLStatsPanelConfigSettings.configurationsettings.Add(f);
+            }
 
-        public static SavedInt
-            fontchange = new SavedInt("CSLStatsPanelTextScaleDelta", Settings.gameSettingsFile, 0, true),
-            minifontchange = new SavedInt("CSLStatsMiniPanelTextScaleDelta", Settings.gameSettingsFile, 0, true);
+            public int value
+            {
+                get { return f.value; }
+                set { f.value = value; }
+            }
 
-        public static SavedBool m_ShowLabelsInMiniMode = new SavedBool(m_settingsprefix + "ShowLabelsInMiniMode", Settings.gameSettingsFile, true, true);
-        public const string m_settingsprefix = "MODCSLStatsPanelConfig_";
-        public const int m_minRefreshRate = 1, m_maxRefreshRate=255;
+        }
+        public class mySavedBool
+        {
+            SavedBool f = null;
+            public mySavedBool(string name, bool defaultvalue)
+            {
+                f = new SavedBool(name, Settings.gameSettingsFile, defaultvalue, true);
+                if (!CSLStatsPanelConfigSettings.configurationsettings.Contains(f))
+                    CSLStatsPanelConfigSettings.configurationsettings.Add(f);
 
-        public static SavedBool m_MiniMode = new SavedBool(m_settingsprefix + "EnableMiniMode", Settings.gameSettingsFile, false, true);
-        
-        public static SavedBool m_EnablePanelColors = new SavedBool(m_settingsprefix + "EnablePanelColors", Settings.gameSettingsFile, true, true);
-        public static SavedBool m_EnablePanelSummaries = new SavedBool(m_settingsprefix + "EnablePanelSummaries", Settings.gameSettingsFile, true, true);
-        private static SavedInt m_PanelRefreshRate = new SavedInt(m_settingsprefix + "RefreshRate", Settings.gameSettingsFile, 3, true);
+            }
+
+            public bool value
+            {
+                get { return f.value; }
+                set { f.value = value; }
+            }
+
+        }
+
+        public static mySavedBool m_DisplayPanel = new mySavedBool(m_settingsprefix + "DisplayPanel", true);
+        public static mySavedFloat
+            windowx = new mySavedFloat("ModCSLStatsPanelWindowPosX", 0),
+            windowy = new mySavedFloat("ModCSLStatsPanelWindowPosY", 0),
+            windoww = new mySavedFloat("ModCSLStatsPanelWindowPosW", 700),
+            windowh = new mySavedFloat("ModCSLStatsPanelWindowPosH", 400);
+
+        public static mySavedFloat
+            miniwindowx = new mySavedFloat("ModCSLStatsPanelMiniWindowPosX", 0),
+            miniwindowy = new mySavedFloat("ModCSLStatsPanelMiniWindowPosY", 0),
+            miniwindoww = new mySavedFloat("ModCSLStatsPanelMiniWindowPosW", 400),
+            miniwindowh = new mySavedFloat("ModCSLStatsPanelMiniWindowPosH", 200);
+
+        public static mySavedInt
+            fontchange = new mySavedInt("CSLStatsPanelTextScaleDelta", 0),
+            minifontchange = new mySavedInt("CSLStatsMiniPanelTextScaleDelta", 0);
+
+        public static mySavedBool m_ShowLabelsInMiniMode = new mySavedBool(m_settingsprefix + "ShowLabelsInMiniMode", true);
+
+        public static mySavedBool m_MiniMode = new mySavedBool(m_settingsprefix + "EnableMiniMode", false);
+
+        public static mySavedBool m_EnablePanelColors = new mySavedBool(m_settingsprefix + "EnablePanelColors", true);
+        public static mySavedBool m_EnablePanelSummaries = new mySavedBool(m_settingsprefix + "EnablePanelSummaries", true);
+        private static mySavedInt m_PanelRefreshRate = new mySavedInt(m_settingsprefix + "RefreshRate", 3);
         public static int PanelRefreshRate
         {
-            get { return m_PanelRefreshRate; }
+            get { return m_PanelRefreshRate.value; }
             set {
                 if (value < 1) value = 1;
                 if (value > 255) value = 255;
@@ -546,7 +637,9 @@ namespace CSLStatsPanel
 
         public static bool isCatActive(string catname)
         {
-            SavedBool isactive = new SavedBool(m_settingsprefix + "Cat_" + catname + "_Active", Settings.gameSettingsFile, true, true);
+            string savedstatname = m_settingsprefix + "Cat_" + catname + "_Active";
+            SavedBool isactive = new SavedBool(savedstatname, Settings.gameSettingsFile, true, true);
+            if (!configurationsettings.Contains(isactive)) configurationsettings.Add(isactive);
             return isactive.value;
         }
 
@@ -558,14 +651,39 @@ namespace CSLStatsPanel
 
         public static bool isStatActive(string catname, string statname)
         {
-            SavedBool isactive = new SavedBool(m_settingsprefix + "Stat_" + catname + "_" + statname + "_Active", Settings.gameSettingsFile, true, true);
+            string savedstatname = m_settingsprefix + "Stat_" + catname + "_" + statname + "_Active";
+            SavedBool isactive = new SavedBool(savedstatname, Settings.gameSettingsFile, true, true);
+            if (!configurationsettings.Contains(isactive)) configurationsettings.Add(isactive);
             return isactive.value;
         }
 
         public static void setStatActive(string catname, string statname, bool active)
         {
-            SavedBool isactive = new SavedBool(m_settingsprefix + "Stat_" + catname + "_" + statname + "_Active", Settings.gameSettingsFile, true, true);
+            string savedstatname = m_settingsprefix + "Stat_" + catname + "_" + statname + "_Active";
+            SavedBool isactive = new SavedBool(savedstatname, Settings.gameSettingsFile, true, true);
             isactive.value = active;
+        }
+
+        public static void resetConfig()
+        {
+            for (int i = 0; i < configurationsettings.Count(); i++)
+            {
+                try
+                {
+                    ((SavedValue)configurationsettings[i]).Delete();
+                }
+                catch { }
+            }
+
+            windowx.value = 0; windowy.value = 0;
+            windoww.value = 700; windowh.value = 500;
+            miniwindowx.value = 0; miniwindowy.value = 0;
+            miniwindoww.value = 400; miniwindowh.value = 200;
+
+            fontchange.value = 0;
+            minifontchange.value = 0;
+            m_MiniMode.value = false;
+            m_PanelRefreshRate.value = 3;
         }
     }
 }

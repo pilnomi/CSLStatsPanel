@@ -359,7 +359,7 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
             {
                 statstopull.Add(new StatisticsClassWrapper(cat, "Count", bs.buildingcount, 2, ""));
                 statstopull.Add(new StatisticsClassWrapper(cat, "Abandoned", StatisticType.AbandonedBuildings, 1, 1, ""));
-                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Abandoned", (bs.buildingcount * .25).ToString()));
+                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Abandoned", (bs.buildingcount * .25).ToString(), "ToolbarIconZoning"));
                 statstopull = new List<StatisticsClassWrapper>();
             }
             
@@ -466,14 +466,24 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
             cat = "Pollution";
             //if (CSLStatsPanelConfigSettings.isCatActive(cat))
             {
-                statstopull.Add(new StatisticsClassWrapper("Pollution", "Noise", ImmaterialResourceManager.Resource.NoisePollution, 1, 1, "%"));
-                statstopull.Add(new StatisticsClassWrapper("Pollution", "Ground", ds.groundpollution, 2, "%"));
+                statstopull.Add(new StatisticsClassWrapper(cat, "Noise", ImmaterialResourceManager.Resource.NoisePollution, 1, 1, "%"));
+                statstopull.Add(new StatisticsClassWrapper(cat, "Ground", ds.groundpollution, 2, "%"));
                 catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "", "", "InfoIconPollution"));
                 statstopull = new List<StatisticsClassWrapper>();
             }
 
+
+            cat = "System Stats";
+            statstopull.Add(new StatisticsClassWrapper(cat, "FPS", ThreadingCSLStatsMod.framespersecond));
+            //statstopull.Add(new StatisticsClassWrapper(cat, "CPU", ThreadingCSLStatsMod.cpuCounter.NextValue(), 2, "%"));
+            //statstopull.Add(new StatisticsClassWrapper(cat, "RAM", ThreadingCSLStatsMod.ramCounter.NextValue(), 2, "%"));
+            catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "", "", "ToolbarIconHelp"));
+            statstopull = new List<StatisticsClassWrapper>();
+            
             return catstopull;
         }
+
+
 
         private static IncomeExpensesPoll[] basicExpensesPolls;
         private static IncomeExpensesPoll[] basicIncomePolls;
@@ -756,3 +766,4 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
         }
     }
 }
+

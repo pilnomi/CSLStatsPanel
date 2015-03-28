@@ -31,6 +31,7 @@ namespace CSLStatsPanel
         {
             bool m_initialized = false;
             
+  
             public override void OnReleased()
             {
                 m_initialized = false;
@@ -56,19 +57,32 @@ namespace CSLStatsPanel
                 base.OnCreated(threading);
             }
             
-            
+            //DateTime Time = DateTime.Now;
+            public static double framespersecond = 0.0f;
+            private static double m_realTimeDelta = 0.0f;
             static int numberofcalls = 0; //track approximate fps
             //called about ~60 times per second. (or max frame rate user is getting atm imagine)
             public override void OnUpdate(float realTimeDelta, float simulationTimeDelta)
             {
-                if (man.loading.loadingComplete && !m_initialized) init();
+                if (man.loading.loadingComplete && !m_initialized) 
+                { 
+                    init(); //Time = DateTime.Now; 
+                }
+
                 //update about once every 3 seconds at 60fps. 
                 numberofcalls++;
+                m_realTimeDelta += realTimeDelta;
                 int myrefreshrate = CSLStatsPanelConfigSettings.PanelRefreshRate;
                 //if (StatusWindowInterface.configChanged) myrefreshrate = 1; // temporarily change update rate to 1sec after config change
                 //if (StatusWindowInterface.running) return;
-                if (numberofcalls < 60 * myrefreshrate) return;
+                //if (numberofcalls < 60 * myrefreshrate) return;
+                if (m_realTimeDelta < myrefreshrate) return ;
+                
+                framespersecond = numberofcalls / m_realTimeDelta;
+                
+                //Time = DateTime.Now;
                 numberofcalls = 0;
+                m_realTimeDelta = 0.0f;
                 if (man.loading.loadingComplete & m_initialized)
                 {
                     StatusWindowInterface.updateText();
@@ -95,18 +109,8 @@ namespace CSLStatsPanel
             //static bool keeponlylastmessage = false;
             public static void log(string logtext)
             {
-                //if (!enablelogging) return;
-                /*
-                System.IO.StreamWriter wr;
-                if (System.IO.File.Exists("cslstatslog.txt") && !keeponlylastmessage)
-                {
-                    wr = System.IO.File.AppendText("cslstatslog.txt");
-                }
-                else wr = System.IO.File.CreateText("cslstatslog.txt");
-                wr.WriteLine(logtext);
-                wr.Close();
-                */
-                //ModTools.Log.Message(logtext);
+                if (!enablelogging) return;
+                UnityEngine.Debug.Log(logtext);
             }
         }
 
