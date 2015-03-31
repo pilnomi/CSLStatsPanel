@@ -9,7 +9,7 @@ using System.Text;
 
 namespace CSLStatsPanel 
 {
-    class ConfigWindow : UIScrollablePanel
+    class ConfigWindow : UIPanel
     {
         UIResizeHandle myresizepanel;
         UIPanel headerpanel;
@@ -124,7 +124,7 @@ namespace CSLStatsPanel
 
         void CloseButton_eventClick(UIComponent component, UIMouseEventParameter eventParam)
         {
-            UIView.DestroyImmediate(this);
+            UIView.Destroy(this);
         }
 
         protected override void OnMouseDown(UIMouseEventParameter p)
@@ -158,7 +158,7 @@ namespace CSLStatsPanel
             //resizelabel.CenterToParent();
             headertext.CenterToParent();
 
-            UIScrollablePanel[] mypanels = myConfigWindowPanel.catpanels.ToArray();
+            UIPanel[] mypanels = myConfigWindowPanel.catpanels.ToArray();
             for (int i = 0; i < mypanels.Count(); i++) 
             {
                 mypanels[i].width = myConfigWindowPanel.width - 15;
@@ -173,10 +173,10 @@ namespace CSLStatsPanel
 
     }
 
-    class ConfigSettingsWindow : UIScrollablePanel
+    class ConfigSettingsWindow : UIPanel
     {
         UITextField refreshInterval;
-        public List<UIScrollablePanel> catpanels = new List<UIScrollablePanel>();
+        public List<UIPanel> catpanels = new List<UIPanel>();
         public override void Start()
         {
             base.Start();
@@ -380,7 +380,7 @@ namespace CSLStatsPanel
             
         }
 
-        UIScrollablePanel drawstatsconfigpanel(StatisticsCategoryWrapper scw)
+        UIPanel drawstatsconfigpanel(StatisticsCategoryWrapper scw)
         {
             //UIScrollablePanel p = this.AddUIComponent<UIScrollablePanel>();
             //p.backgroundSprite = "GenericPanel";
@@ -392,7 +392,7 @@ namespace CSLStatsPanel
 
 
 
-            UIScrollablePanel catsubpanel = this.AddUIComponent<UIScrollablePanel>();
+            UIPanel catsubpanel = this.AddUIComponent<UIPanel>();
             catpanels.Add(catsubpanel);
             catsubpanel.autoLayout = true;
             catsubpanel.wrapLayout = true;
@@ -719,6 +719,7 @@ namespace CSLStatsPanel
             minifontchange.value = 0;
             m_MiniMode.value = false;
             m_PanelRefreshRate.value = 3;
+            m_ShowLabelsInMiniMode.value = false;
         }
     }
 }

@@ -37,6 +37,9 @@ namespace CSLStatsPanel
         //seems to avoid the "load game" problem while in-game
         public override void OnLevelLoaded(LoadMode mode)
         {
+            if (mode != LoadMode.LoadGame && mode != LoadMode.NewGame)
+                return;
+            //DebugOutputPanel.AddMessage(ColossalFramework.Plugins.PluginManager.MessageType.Message, "LoadingCSLStatsMod.OnLevelLoaded");
             //UnityEngine.Debug.Log("LoadingCSLStatsMod.OnLevelLoaded");
             if (ThreadTracker.instance == null) ThreadTracker.instance = new ThreadingCSLStatsMod();
             ThreadTracker.instance.m_initialized = false;
@@ -45,10 +48,31 @@ namespace CSLStatsPanel
             
             base.OnLevelLoaded(mode);
         }
+
+        public override void OnLevelUnloading()
+        {
+            StatusWindowInterface.reset();
+            ThreadTracker.instance = null;
+            base.OnLevelUnloading();
+        }
+
+        public override void OnReleased()
+        {
+            StatusWindowInterface.reset();
+            ThreadTracker.instance = null;
+            base.OnReleased();
+        }
     }
     public class ThreadingCSLStatsMod : ThreadingExtensionBase
     {
         public bool m_initialized = false;
+
+        ~ThreadingCSLStatsMod()
+        {
+            m_initialized = false;
+            StatusWindowInterface.reset();
+        }
+
         public override void OnReleased()
         {
             m_initialized = false;
@@ -68,20 +92,20 @@ namespace CSLStatsPanel
         //DateTime Time = DateTime.Now;
         public static double framespersecond = 0.0f;
         private static double m_realTimeDelta = 0.0f;
+        private int minimumFramesBetweenCalls = 20;
         static int numberofcalls = 0; //track approximate fps
+
         //called about ~60 times per second. (or max frame rate user is getting atm imagine)
         public override void OnUpdate(float realTimeDelta, float simulationTimeDelta)
         {
-            //update about once every 3 seconds at 60fps. 
             numberofcalls++;
             m_realTimeDelta += realTimeDelta;
             int myrefreshrate = CSLStatsPanelConfigSettings.PanelRefreshRate;
+            
             if (StatusWindowInterface.configChanged) myrefreshrate = 1; // temporarily change update rate to 1sec after config change
             if (StatusWindowInterface.doReset) myrefreshrate = 1;
             if (StatusWindowInterface.running) return;
-            //if (numberofcalls < 60 * myrefreshrate) return;
-            if (m_realTimeDelta < myrefreshrate) return ;
-            //UnityEngine.Debug.Log("ThreadingCSLStatsMod.OnUpdate " + framespersecond.ToString());    
+            if (m_realTimeDelta < myrefreshrate || numberofcalls < minimumFramesBetweenCalls) return;
             framespersecond = numberofcalls / m_realTimeDelta;
                 
             //Time = DateTime.Now;
@@ -89,7 +113,11 @@ namespace CSLStatsPanel
             m_realTimeDelta = 0.0f;
             if (m_initialized)
             {
-                StatusWindowInterface.updateText();
+                try
+                {
+                    StatusWindowInterface.updateText();
+                }
+                catch (Exception ex) { UnityEngine.Debug.Log(ex.Message); }
             }
             else
             {

@@ -102,9 +102,19 @@ namespace CSLStatsPanel
 
         public static void resetstatswindow()
         {
-            UIView.DestroyImmediate(myStatsWindowPanel);
-            myStatsWindowPanel = null;
-            running = false;
+            try
+            {
+                if (myStatsWindowPanel != null)
+                {
+                    myStatsWindowPanel.resetStatsWindow();
+                    UIView.DestroyImmediate(myStatsWindowPanel.gameObject);
+                }
+            }
+            finally
+            {
+                myStatsWindowPanel = null;
+                running = false;
+            }
         }
 
         public static void reset()
@@ -157,6 +167,12 @@ namespace CSLStatsPanel
             if (isresetting) return;
             if (myStatsWindowPanel == null) return;
             isresetting = true;
+            if (mousehovertimer != null)
+            {
+                mousehovertimer_Elapsed(null, null);
+            }
+            mousehovertimer = null;
+
             myStatsWindowPanel.reset();
             firstrun = true;
             isresetting = false;
@@ -174,7 +190,7 @@ namespace CSLStatsPanel
         {
             if (configButton != null) this.RemoveUIComponent(configButton);
             
-            UIScrollablePanel p = myresizepanel.AddUIComponent<UIScrollablePanel>();
+            UIPanel p = myresizepanel.AddUIComponent<UIPanel>();
             p.autoLayout = true;
             p.autoSize = true;
             p.autoLayoutDirection = LayoutDirection.Horizontal;
@@ -252,8 +268,6 @@ namespace CSLStatsPanel
         private void MouseIsHovering(UIMouseEventParameter p)
         {
             if (mousehovertimer != null) mousehovertimer.Enabled = false;
-            mousehovertimer = new System.Timers.Timer(50);
-            mousehovertimer.Elapsed += new System.Timers.ElapsedEventHandler(mousehovertimer_Elapsed);
             myStatsWindowPanel.backgroundSprite = "GenericPanel";
             headerpanel.backgroundSprite = "GenericPanel";
             myresizepanel.backgroundSprite = "GenericPanel";
@@ -261,6 +275,10 @@ namespace CSLStatsPanel
             UIButton[] mybuttons = myresizepanel.GetComponentsInChildren<UIButton>();
             foreach (UIButton b in mybuttons)
                 b.Show();
+
+            if (!CSLStatsPanelConfigSettings.m_EnableTransparency.value) return;
+            mousehovertimer = new System.Timers.Timer(50);
+            mousehovertimer.Elapsed += new System.Timers.ElapsedEventHandler(mousehovertimer_Elapsed);
         }
 
         protected override void OnMouseHover(UIMouseEventParameter p)
@@ -270,14 +288,17 @@ namespace CSLStatsPanel
 
         void mousehovertimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
         {
-            mousehovertimer.Enabled = false;
-            myStatsWindowPanel.backgroundSprite = "";
-            headerpanel.backgroundSprite = "";
-            myresizepanel.backgroundSprite = "";
-            headertext.Hide();
-            UIButton[] mybuttons = myresizepanel.GetComponentsInChildren<UIButton>();
-            foreach (UIButton b in mybuttons)
-                b.Hide();
+            try
+            {
+                mousehovertimer.Enabled = false;
+                myStatsWindowPanel.backgroundSprite = "";
+                headerpanel.backgroundSprite = "";
+                myresizepanel.backgroundSprite = "";
+                headertext.Hide();
+                UIButton[] mybuttons = myresizepanel.GetComponentsInChildren<UIButton>();
+                foreach (UIButton b in mybuttons)
+                    b.Hide();
+            }catch{}
         }
         protected override void OnMouseLeave(UIMouseEventParameter p)
         {
@@ -304,7 +325,6 @@ namespace CSLStatsPanel
             headertext.text = "CSL Stats Panel";
             if (CSLStatsPanelConfigSettings.m_EnableTransparency.value) headertext.Hide();
 
-            headertext.CenterToParent();
 
             addStatsWindowPanel();
 
@@ -324,6 +344,8 @@ namespace CSLStatsPanel
 
         public override void Start()
         {
+            headertext.CenterToParent();
+            //init();
             base.Start();
  
         }
@@ -331,7 +353,7 @@ namespace CSLStatsPanel
         {
             this.autoSize = false;
             this.autoLayout = false;
-            if (myconfigwindow != null) UIView.DestroyImmediate(myconfigwindow);
+            if (myconfigwindow != null) UIView.DestroyImmediate(myconfigwindow.gameObject);
             base.OnDestroy();
         }
 
@@ -348,7 +370,8 @@ namespace CSLStatsPanel
             }
             else
             {
-                UIView.DestroyImmediate(myconfigwindow);
+                //UIView.DestroyImmediate(myconfigwindow);
+                UIView.DestroyImmediate(myconfigwindow.gameObject);
                 myconfigwindow = null;
             }
             if (component != null)
@@ -413,7 +436,7 @@ namespace CSLStatsPanel
                 }
                 if (subpanel.Value.spritepanel != null)
                 {
-                    UIScrollablePanel sp = subpanel.Value.GetComponentInChildren<UIScrollablePanel>();
+                    UIPanel sp = subpanel.Value.GetComponentInChildren<UIPanel>();
                     UISprite s = subpanel.Value.GetComponentInChildren<UISprite>();
                     UILabel l = subpanel.Value.GetComponentInChildren<UILabel>();
                     l.padding = new RectOffset(l.padding.left + (1 * fontchange.value), l.padding.right, l.padding.top, l.padding.bottom);
@@ -612,13 +635,27 @@ namespace CSLStatsPanel
 
         public void reset()
         {
+            m_textfields = null;
+            m_textfields = new List<CSLStatsPanelLabel>();
+            if (spritepanel != null)
+            {
+                //spritepanel.Hide();
+                this.RemoveUIComponent(spritepanel);
+                UIView.DestroyImmediate(spritepanel.gameObject);
+            }
             foreach (KeyValuePair<string, CSLStatusWindowSubPanel> p in m_categories)
             {
+                if (p.Value.spritepanel != null)
+                {
+                    p.Value.RemoveUIComponent(p.Value.spritepanel);
+                    UIView.DestroyImmediate(p.Value.spritepanel.gameObject);
+                }
                 this.RemoveUIComponent(p.Value);
-                UIView.DestroyImmediate(p.Value);
+                UIView.DestroyImmediate(p.Value.gameObject);
             }
+            m_categories = null;
             m_categories = new Dictionary<string, CSLStatusWindowSubPanel>();
-            m_textfields = new List<CSLStatsPanelLabel>();
+            this.Update();
             firstrun = true;
             mycount = 0;
             running = false;
@@ -772,7 +809,6 @@ namespace CSLStatsPanel
             firstrun = false;
             running = false;
         }
-   
         public void updateText(List<string> TextFields)
         {
             statlog.log("update text initialized=" + initialized.ToString() + " running=" + running.ToString());
@@ -814,17 +850,6 @@ namespace CSLStatsPanel
             }
             running = false;
         }
-
-        ~CSLStatusWindowPanel()
-        {
-
-            m_textfields = new List<CSLStatsPanelLabel>();
-            this.autoLayout = false;
-            this.autoSize = false;
-            initialized = false;
-            running = false;
-        }
-
         
     }
 

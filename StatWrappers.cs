@@ -106,7 +106,7 @@ namespace CSLStatsPanel
         public ImmaterialResourceManager.Resource m_st2;
         public string m_desc;
         public decimal m_scale, m_multiplier;
-        public string m_scaledesc;
+        public string m_scaledesc = "";
         public string statstring;
         public string category;
         public float m_value;
@@ -138,12 +138,16 @@ namespace CSLStatsPanel
             this.category = category;
             statstring = description;
         }
-        public StatisticsClassWrapper(string category, string description, double value, int precision = 2, string suffix = "")
+        public StatisticsClassWrapper(string category, string description, double value, int precision = 2, string suffix = "", decimal scale = 1)
         {
             this.category = category;
             m_desc = description;
             m_value = (float)value;
-            m_scaledesc = suffix;
+            if (value > (float)scale)
+            {
+                value /= (float)scale;
+                m_scaledesc = suffix;
+            }
             statstring = description + ": " + Math.Round(value, precision).ToString() + suffix;
 
         }
@@ -179,7 +183,7 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
         string getstatstring(string desc, StatisticType st,
             decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int precision = 2)
         {
-            statlog.log(st);
+            //statlog.log(st);
             try
             {
                 StatisticsManager sm = Singleton<StatisticsManager>.instance;
@@ -214,7 +218,16 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
         public int onfire = 0, buildingcount = 0;
         public buildingStats()
         {
+
             BuildingManager bm = Singleton<BuildingManager>.instance;
+            Building[] mybuilding = bm.m_buildings.m_buffer.Where(p =>
+                p.m_flags.IsFlagSet(Building.Flags.Created)
+                && !p.m_flags.IsFlagSet(Building.Flags.Untouchable)).ToArray();
+
+            buildingcount = mybuilding.Count();
+            onfire = mybuilding.Where(p =>p.m_fireIntensity > 0).Count();
+
+            /*
             for (int i = 0; i < bm.m_buildings.m_buffer.Count(); i++)
             {
                 if (!bm.m_buildings.m_buffer[i].m_flags.IsFlagSet(Building.Flags.Created)) continue;
@@ -225,7 +238,7 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                 buildingcount++;
                 if (bm.m_buildings.m_buffer[i].m_fireIntensity > 0) onfire++;
             }
-
+            */
 
         }
 
@@ -241,7 +254,8 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
         public districtStats()
         {
             DistrictManager dm = Singleton<DistrictManager>.instance;
-            for (int i = 0; i < 1; i++)
+            int i = 0;
+            //for (int i = 0; i < 1; i++)
             {
                 //if (!dm.m_districts.m_buffer[i].m_flags.IsFlagSet(District.Flags.Created)) continue;
                 //if (dm.m_districts.m_buffer[i].m_flags.IsFlagSet(District.Flags.CustomName)) continue;
@@ -312,18 +326,18 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
             cat = "Garbage";
             //if (CSLStatsPanelConfigSettings.isCatActive(cat))
             {
-                statstopull.Add(new StatisticsClassWrapper(cat, "Amount", StatisticType.GarbageAmount, 1000, 1, "K")); ;
+                statstopull.Add(new StatisticsClassWrapper(cat, "Production", ds.garbage, 2, "K", 1000)); // production
+                statstopull.Add(new StatisticsClassWrapper(cat, "Stored", StatisticType.GarbageAmount, 1000, 1, "K")); ;
                 int garbageamount = (int)statstopull.Last().m_value;
-                statstopull.Add(new StatisticsClassWrapper(cat, "Accumulation", ds.garbage));
                 garbageamount += (int)ds.garbage;
-                statstopull.Add(new StatisticsClassWrapper(cat, "Total Inflow", garbageamount));
-                statstopull.Add(new StatisticsClassWrapper(cat, "Capacity", StatisticType.GarbageCapacity, 1000, 1, "K")); ;
+                statstopull.Add(new StatisticsClassWrapper(cat, "Total", garbageamount, 2, "K", 1000));
+                statstopull.Add(new StatisticsClassWrapper(cat, "Storage", StatisticType.GarbageCapacity, 1000, 1, "K")); ;
                 int totalcapacity = (int)statstopull.Last().m_value;
-                statstopull.Add(new StatisticsClassWrapper(cat, "Incinerate Capacity", StatisticType.IncinerationCapacity, 1000, 16, "M")); ;
+                statstopull.Add(new StatisticsClassWrapper(cat, "Incinerators", StatisticType.IncinerationCapacity, 1000, 16, "K")); ;
                 totalcapacity += (int)statstopull.Last().m_value;
-                statstopull.Add(new StatisticsClassWrapper(cat, "Total Capacity", totalcapacity));
+                statstopull.Add(new StatisticsClassWrapper(cat, "Capacity", totalcapacity, 2, "K", 1000));
                 statstopull.Add(new StatisticsClassWrapper(cat, "Piles", StatisticType.GarbagePiles, 1000, 1, "M"));
-                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Total Inflow", "Total Capacity", "InfoIconGarbage", true));
+                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Total", "Capacity", "InfoIconGarbage", true));
                 statstopull = new List<StatisticsClassWrapper>();
             }
 
@@ -475,9 +489,12 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
             statstopull.Add(new StatisticsClassWrapper(cat, "FPS", ThreadingCSLStatsMod.framespersecond));
             //statstopull.Add(new StatisticsClassWrapper(cat, "CPU", ThreadingCSLStatsMod.cpuCounter.NextValue(), 2, "%"));
             //statstopull.Add(new StatisticsClassWrapper(cat, "RAM", ThreadingCSLStatsMod.ramCounter.NextValue(), 2, "%"));
+
+            
+
             catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "", "", "ToolbarIconHelp"));
             statstopull = new List<StatisticsClassWrapper>();
-            
+
             return catstopull;
         }
 
