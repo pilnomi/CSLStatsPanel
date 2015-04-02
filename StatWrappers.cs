@@ -77,8 +77,6 @@ namespace CSLStatsPanel
                 float usedvalue = (m_resourceusedliteral == -1) ? m_scwlist[m_resourceusedindex].m_value : m_resourceusedliteral;
                 float capacityvalue = (m_resourcecapacityliteral == -1) ? m_scwlist[m_resourcecapacityindex].m_value : m_resourcecapacityliteral;
                 if (usedvalue > 0 && capacityvalue <= 0) return 1;
-                //statlog.log("capacity usage " + m_category + " " + usedvalue.ToString() + " / " + capacityvalue.ToString() +
-                //    " " + (usedvalue / capacityvalue).ToString());
                 return (usedvalue / capacityvalue);
             }
         }
@@ -155,7 +153,6 @@ namespace CSLStatsPanel
         string getstatstring(string desc, ImmaterialResourceManager.Resource st,
 decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int precision = 2)
         {
-            //statlog.log(st);
             try
             {
                 ImmaterialResourceManager im = Singleton<ImmaterialResourceManager>.instance;
@@ -183,7 +180,6 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
         string getstatstring(string desc, StatisticType st,
             decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int precision = 2)
         {
-            //statlog.log(st);
             try
             {
                 StatisticsManager sm = Singleton<StatisticsManager>.instance;
@@ -213,32 +209,45 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
 
     }
 
+
+
     public class buildingStats
     {
-        public int onfire = 0, buildingcount = 0;
+        public int onfire = 0, buildingcount = 0,
+            garbagetrucks = 0, firetrucks = 0, hearse = 0, policecars = 0, healthcarevehicles = 0;
         public buildingStats()
         {
-
             BuildingManager bm = Singleton<BuildingManager>.instance;
-            Building[] mybuilding = bm.m_buildings.m_buffer.Where(p =>
-                p.m_flags.IsFlagSet(Building.Flags.Created)
-                && !p.m_flags.IsFlagSet(Building.Flags.Untouchable)).ToArray();
+            
+            //buildingcount = mybuilding.Count();
+            //onfire = mybuilding.Where(p =>p.m_fireIntensity > 0).Count();
 
-            buildingcount = mybuilding.Count();
-            onfire = mybuilding.Where(p =>p.m_fireIntensity > 0).Count();
 
-            /*
             for (int i = 0; i < bm.m_buildings.m_buffer.Count(); i++)
             {
                 if (!bm.m_buildings.m_buffer[i].m_flags.IsFlagSet(Building.Flags.Created)) continue;
-                if (bm.m_buildings.m_buffer[i].m_flags.IsFlagSet(Building.Flags.Original)) continue;
-                if (bm.m_buildings.m_buffer[i].m_flags.IsFlagSet(Building.Flags.None)) continue;
+                if (bm.m_buildings.m_buffer[i].m_flags.IsFlagSet(Building.Flags.Deleted)) continue;
                 if (bm.m_buildings.m_buffer[i].m_flags.IsFlagSet(Building.Flags.Untouchable)) continue;
 
-                buildingcount++;
+                BuildingAI bi = bm.m_buildings.m_buffer[i].Info.m_buildingAI;
+                Type t = bi.GetType();
+
+                if (t == typeof(LandfillSiteAI))                    // incinerators seem to be landfillai's as well
+                    garbagetrucks += ((LandfillSiteAI)bi).m_garbageTruckCount;
+                else if (t == typeof(PoliceStationAI))
+                    policecars += ((PoliceStationAI)bi).m_policeCarCount;
+                else if (t == typeof(FireStationAI))
+                    firetrucks += ((FireStationAI)bi).m_fireTruckCount;
+                else if (t == typeof(HospitalAI))
+                    healthcarevehicles += ((HospitalAI)bi).m_ambulanceCount;
+                else if (t == typeof(CemeteryAI))
+                    hearse += ((CemeteryAI)bi).m_hearseCount;
+
                 if (bm.m_buildings.m_buffer[i].m_fireIntensity > 0) onfire++;
+                buildingcount++;
             }
-            */
+
+
 
         }
 
@@ -285,10 +294,163 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
         }
     }
 
+    public class vehiclestats
+    {
+        public double activevehicles = 0,
+            garbagetrucksinuse = 0, firetrucksinuse = 0, hearseinuse = 0, policecarsinuse = 0, healthcarevehiclesinuse = 0,
+            passengerbusses = 0, passengerships = 0, passengertrains = 0, passengerplanes = 0, passengermetro = 0,
+            cargocars = 0, cargobusses = 0, cargoships = 0, cargotrains = 0, cargoplanes = 0, cargometro = 0,
+            commercialcars = 0, commercialbusses = 0, commercialships = 0, commercialtrains = 0, commercialplanes = 0, commercialmetro = 0,
+            officecars = 0, officebusses = 0, officeships = 0, officetrains = 0, officeplanes = 0, officemetro = 0;
+
+
+        public bool checkbuilding(Building b)
+        {
+            return b.m_flags.IsFlagSet(Building.Flags.Created)
+                && !b.m_flags.IsFlagSet(Building.Flags.Deleted)
+                && !b.m_flags.IsFlagSet(Building.Flags.Untouchable);
+        }
+
+        public vehiclestats()
+        {
+            VehicleManager vm = Singleton<VehicleManager>.instance;
+            BuildingManager bm = Singleton<BuildingManager>.instance;
+
+
+            for (int i = 0; i < vm.m_vehicles.m_buffer.Count(); i++)
+            {
+                Vehicle myv = vm.m_vehicles.m_buffer[i];
+                if (!myv.m_flags.IsFlagSet(Vehicle.Flags.Created)) continue;
+                if (myv.m_flags.IsFlagSet(Vehicle.Flags.Deleted)) continue;
+
+                activevehicles++;
+            
+                Building b = bm.m_buildings.m_buffer[myv.m_targetBuilding];
+                bool buildingisvalid = checkbuilding(b);
+
+                switch (myv.Info.m_class.m_service)
+                {
+                    case ItemClass.Service.Garbage:
+                        garbagetrucksinuse++;
+                        break;
+                    case ItemClass.Service.FireDepartment:
+                        firetrucksinuse++;
+                        break;
+                    case ItemClass.Service.PoliceDepartment:
+                        policecarsinuse++;
+                        break;
+                    case ItemClass.Service.HealthCare:
+                        if (myv.Info.m_vehicleAI.GetType() == typeof(AmbulanceAI))
+                            healthcarevehiclesinuse++;
+                        else if (myv.Info.m_vehicleAI.GetType() == typeof(HearseAI))
+                            hearseinuse++;
+                        break;
+                    case ItemClass.Service.PublicTransport:
+                        switch (myv.Info.m_class.m_subService)
+                        {
+
+                            case ItemClass.SubService.PublicTransportPlane:
+                                if (buildingisvalid) 
+                                    passengerplanes++;
+                                break;
+                            case ItemClass.SubService.PublicTransportTrain:
+                                if (buildingisvalid)
+                                    passengertrains++;
+                                break;
+                            case ItemClass.SubService.PublicTransportShip:
+                                if (buildingisvalid)
+                                    passengerships++;
+                                break;
+                            case ItemClass.SubService.PublicTransportBus:
+                                passengerbusses++;
+                                break;
+                            case ItemClass.SubService.PublicTransportMetro:
+                                passengermetro++;
+                                break;
+                        }
+                        break;
+                    case ItemClass.Service.Industrial:
+                        switch (myv.Info.m_vehicleType)
+                        {
+                            case VehicleInfo.VehicleType.Car:
+                                cargocars++;
+                                break;
+                            case VehicleInfo.VehicleType.Metro:
+                                cargometro++;
+                                break;
+                            case VehicleInfo.VehicleType.Plane:
+                                cargoplanes++;
+                                break;
+                            case VehicleInfo.VehicleType.Ship:
+                                cargoships++;
+                                break;
+                            case VehicleInfo.VehicleType.Train:
+                                cargotrains++;
+                                break;
+                        }
+                        break;
+                    case ItemClass.Service.Commercial:
+                        switch (myv.Info.m_vehicleType)
+                        {
+                            case VehicleInfo.VehicleType.Car:
+                                commercialcars++;
+                                break;
+                            case VehicleInfo.VehicleType.Metro:
+                                commercialmetro++;
+                                break;
+                            case VehicleInfo.VehicleType.Plane:
+                                commercialplanes++;
+                                break;
+                            case VehicleInfo.VehicleType.Ship:
+                                commercialships++;
+                                break;
+                            case VehicleInfo.VehicleType.Train:
+                                commercialtrains++;
+                                break;
+                        }
+                        break;
+                    case ItemClass.Service.Office:
+                        switch (myv.Info.m_vehicleType)
+                        {
+                            case VehicleInfo.VehicleType.Car:
+                                officecars++;
+                                break;
+                            case VehicleInfo.VehicleType.Metro:
+                                officemetro++;
+                                break;
+                            case VehicleInfo.VehicleType.Plane:
+                                officeplanes++;
+                                break;
+                            case VehicleInfo.VehicleType.Ship:
+                                officeships++;
+                                break;
+                            case VehicleInfo.VehicleType.Train:
+                                officetrains++;
+                                break;
+                        }
+                        break;
+                }
+                
+            }
+
+
+        }
+    }
+
+
     public static class MasterStatsWrapper
     {
-        public static List<StatisticsCategoryWrapper> getstats3()
+        public static void StatAdd(ref List<StatisticsClassWrapper> scwlist, StatisticsClassWrapper scwtoadd, bool onlyenabled)
         {
+            if (CSLStatsPanelConfigSettings.isStatActive(scwtoadd.category, scwtoadd.m_desc) || !onlyenabled)
+            {
+                scwlist.Add(scwtoadd);
+            }
+        }
+
+        public static List<StatisticsCategoryWrapper> getstats3(bool onlyenabled = true)
+        {
+            onlyenabled = false;
             List<StatisticsCategoryWrapper> catstopull = new List<StatisticsCategoryWrapper>();
             List<StatisticsClassWrapper> statstopull = new List<StatisticsClassWrapper>();
 
@@ -296,90 +458,102 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
             buildingStats bs = new buildingStats();
 
             string cat = "Power";
-            //if (CSLStatsPanelConfigSettings.isCatActive(cat))
+            if (CSLStatsPanelConfigSettings.isCatActive(cat) || !onlyenabled)
             {
-                statstopull.Add(new StatisticsClassWrapper(cat, "Used", ds.dmusage / 1000, 2, "MW"));
-                statstopull.Add(new StatisticsClassWrapper(cat, "Capacity", StatisticType.ElectricityCapacity, 1000, 16, "MW"));
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Used", ds.dmusage / 1000, 2, "MW"), false);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Capacity", StatisticType.ElectricityCapacity, 1000, 16, "MW"), false);
                 catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, ds.dmusage.ToString(), "Capacity", "InfoIconElectricity", true));
                 statstopull = new List<StatisticsClassWrapper>();
             }
 
             cat = "Water";
-            //if (CSLStatsPanelConfigSettings.isCatActive(cat))
+            if (CSLStatsPanelConfigSettings.isCatActive(cat) || !onlyenabled)
             {
-                statstopull.Add(new StatisticsClassWrapper(cat, "Used", ds.waterbuffer, 2, "m³"));
-                statstopull.Add(new StatisticsClassWrapper(cat, "Capacity", StatisticType.WaterCapacity, 1, 16, "m³"));
-                statstopull.Add(new StatisticsClassWrapper(cat, "Pollution", StatisticType.WaterPollution, 1, 1, "%"));
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Used", ds.waterbuffer, 2, "m³"), false);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Capacity", StatisticType.WaterCapacity, 1, 16, "m³"), false);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Pollution", StatisticType.WaterPollution, 1, 1, "%"), onlyenabled);
                 catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Used", "Capacity", "InfoIconWater", true));
                 statstopull = new List<StatisticsClassWrapper>();
             }
 
             cat = "Sewage";
-            //if (CSLStatsPanelConfigSettings.isCatActive(cat))
+            if (CSLStatsPanelConfigSettings.isCatActive(cat) || !onlyenabled)
             {
-                statstopull.Add(new StatisticsClassWrapper(cat, "Used", ds.sewagebuffer, 2, "m³"));
-                statstopull.Add(new StatisticsClassWrapper(cat, "Capacity", StatisticType.SewageCapacity, 1, 16, "m³"));
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Used", ds.sewagebuffer, 2, "m³"),false);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Capacity", StatisticType.SewageCapacity, 1, 16, "m³"),false);
                 catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Used", "Capacity", "InfoIconWaterPressed", true));
                 statstopull = new List<StatisticsClassWrapper>();
             }
 
+            vehiclestats vs = new vehiclestats();
+                
             cat = "Garbage";
-            //if (CSLStatsPanelConfigSettings.isCatActive(cat))
+            if (CSLStatsPanelConfigSettings.isCatActive(cat) || !onlyenabled)
             {
-                statstopull.Add(new StatisticsClassWrapper(cat, "Production", ds.garbage, 2, "K", 1000)); // production
-                statstopull.Add(new StatisticsClassWrapper(cat, "Stored", StatisticType.GarbageAmount, 1000, 1, "K")); ;
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Production", ds.garbage, 2, "K", 1000),onlyenabled); // production
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Stored", StatisticType.GarbageAmount, 1000, 1, "K"),onlyenabled); ;
                 int garbageamount = (int)statstopull.Last().m_value;
                 garbageamount += (int)ds.garbage;
-                statstopull.Add(new StatisticsClassWrapper(cat, "Total", garbageamount, 2, "K", 1000));
-                statstopull.Add(new StatisticsClassWrapper(cat, "Storage", StatisticType.GarbageCapacity, 1000, 1, "K")); ;
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Total", garbageamount, 2, "K", 1000),false);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Storage", StatisticType.GarbageCapacity, 1000, 1, "K"),onlyenabled) ;
                 int totalcapacity = (int)statstopull.Last().m_value;
-                statstopull.Add(new StatisticsClassWrapper(cat, "Incinerators", StatisticType.IncinerationCapacity, 1000, 16, "K")); ;
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Incinerators", StatisticType.IncinerationCapacity, 1000, 16, "K"),onlyenabled) ;
                 totalcapacity += (int)statstopull.Last().m_value;
-                statstopull.Add(new StatisticsClassWrapper(cat, "Capacity", totalcapacity, 2, "K", 1000));
-                statstopull.Add(new StatisticsClassWrapper(cat, "Piles", StatisticType.GarbagePiles, 1000, 1, "M"));
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Capacity", totalcapacity, 2, "K", 1000),false);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Piles", StatisticType.GarbagePiles, 1000, 1, "M"),onlyenabled);
+
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Vehicles Used", vs.garbagetrucksinuse),onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Vehicles Total", bs.garbagetrucks),onlyenabled);
+
                 catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Total", "Capacity", "InfoIconGarbage", true));
                 statstopull = new List<StatisticsClassWrapper>();
             }
 
             cat = "Health Services";
-            //if (CSLStatsPanelConfigSettings.isCatActive(cat))
+            if (CSLStatsPanelConfigSettings.isCatActive(cat) || !onlyenabled)
             {
-                statstopull.Add(new StatisticsClassWrapper(cat, "Health", ImmaterialResourceManager.Resource.Health, 1, 1, "%"));
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Health", ImmaterialResourceManager.Resource.Health, 1, 1, "%"),false);
                 StatisticsClassWrapper tempscw = statstopull[statstopull.Count() - 1];
                 int health = (int)tempscw.m_value;
-                statstopull.Add(new StatisticsClassWrapper(cat, "Well Being", ImmaterialResourceManager.Resource.Wellbeing, 1, 1, "%"));
-                statstopull.Add(new StatisticsClassWrapper(cat, "Sick", ds.sickcount));
-                statstopull.Add(new StatisticsClassWrapper(cat, "Capacity", StatisticType.HealCapacity, 1, 1, ""));
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Well Being", ImmaterialResourceManager.Resource.Wellbeing, 1, 1, "%"),onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Sick", ds.sickcount),onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Capacity", StatisticType.HealCapacity, 1, 1, ""),onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Vehicles Used", vs.healthcarevehiclesinuse),onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Vehicles Total", bs.healthcarevehicles),onlyenabled);
                 catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, (100 - health).ToString(), "30", "InfoIconHealth"));
                 statstopull = new List<StatisticsClassWrapper>();
             }
             
             cat = "Death Services";
-            //if (CSLStatsPanelConfigSettings.isCatActive(cat))
+            if (CSLStatsPanelConfigSettings.isCatActive(cat) || !onlyenabled)
             {
 
-                statstopull.Add(new StatisticsClassWrapper(cat, "Amount", StatisticType.DeadAmount, 1, 1, ""));
-                statstopull.Add(new StatisticsClassWrapper(cat, "Capacity", StatisticType.DeadCapacity, 1, 1, ""));
-                statstopull.Add(new StatisticsClassWrapper(cat, "Cremate Capacity", StatisticType.CremateCapacity, 1000, 1, "K"));
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Amount", StatisticType.DeadAmount, 1, 1, ""),false);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Capacity", StatisticType.DeadCapacity, 1, 1, ""),false);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Cremate Capacity", StatisticType.CremateCapacity, 1000, 1, "K"),false);
                 float totaldeathcap = statstopull[statstopull.Count() - 2].m_value + statstopull[statstopull.Count - 1].m_value;
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Vehicles Used", vs.hearseinuse),onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Vehicles Total", bs.hearse),onlyenabled);
                 catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Amount", totaldeathcap.ToString(), "InfoIconHealthPressed", true));
                 statstopull = new List<StatisticsClassWrapper>();
             }
 
             cat = "Buildings";
-            //if (CSLStatsPanelConfigSettings.isCatActive(cat))
+            if (CSLStatsPanelConfigSettings.isCatActive(cat) || !onlyenabled)
             {
-                statstopull.Add(new StatisticsClassWrapper(cat, "Count", bs.buildingcount, 2, ""));
-                statstopull.Add(new StatisticsClassWrapper(cat, "Abandoned", StatisticType.AbandonedBuildings, 1, 1, ""));
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Count", bs.buildingcount, 2, ""),false);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Abandoned", StatisticType.AbandonedBuildings, 1, 1, ""),false);
                 catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Abandoned", (bs.buildingcount * .25).ToString(), "ToolbarIconZoning"));
                 statstopull = new List<StatisticsClassWrapper>();
             }
             
             cat = "Fire";
-            //if (CSLStatsPanelConfigSettings.isCatActive(cat))
+            if (CSLStatsPanelConfigSettings.isCatActive(cat) || !onlyenabled)
             {
-                statstopull.Add(new StatisticsClassWrapper(cat, "Hazard", ImmaterialResourceManager.Resource.FireHazard, 1, 1, "%"));
-                statstopull.Add(new StatisticsClassWrapper(cat, "Buildings Burning", bs.onfire, 2, ""));
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Hazard", ImmaterialResourceManager.Resource.FireHazard, 1, 1, "%"),onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Buildings Burning", bs.onfire, 2, ""),onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Vehicles Used", vs.firetrucksinuse),onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Vehicles Total", bs.firetrucks),onlyenabled);
                 catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Hazard", "50", "InfoIconFireSafety"));
                 statstopull = new List<StatisticsClassWrapper>();
             }
@@ -387,8 +561,8 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
             //statstopull.Add(new StatisticsClassWrapper("Health Services", "Health", ImmaterialResourceManager.Resource.Health, 1, 1, "%"));
 
             cat = "Economy";
-            
-            //if (CSLStatsPanelConfigSettings.isCatActive(cat))
+
+            if (CSLStatsPanelConfigSettings.isCatActive(cat) || !onlyenabled)
             {
                 if (!pollsinitialized) InitializePolls();
                 //UpdateIncomeExpenses();
@@ -402,99 +576,105 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                     myexpenses += budgetExpensesPolls[j].expenses;
                 }
                 myexpenses += expensesPoliciesTotal;
-                StatisticsClassWrapper tempscw = new StatisticsClassWrapper(cat, "Service Expenses", StatisticType.ServiceExpenses, 1, 1, "");
+                //StatisticsClassWrapper tempscw = new StatisticsClassWrapper(cat, "Service Expenses", StatisticType.ServiceExpenses, 1, 1, "");
                 int servicesexpenses = (int)myexpenses / 100 ; // tempscw.m_value / 100;
                 int servicesincome = (int)myincome / 100; // tempscw.m_value / 100;
-                statstopull.Add(new StatisticsClassWrapper(cat, "Budget", servicesincome - servicesexpenses));
-                statstopull.Add(new StatisticsClassWrapper(cat, "Income", servicesincome));
-                statstopull.Add(new StatisticsClassWrapper(cat, "Expenses", servicesexpenses));
-                statstopull.Add(new StatisticsClassWrapper(cat, "Entertainment", ImmaterialResourceManager.Resource.Entertainment, 1, 1, ""));
-                statstopull.Add(new StatisticsClassWrapper(cat, "Attractiveness", ImmaterialResourceManager.Resource.Attractiveness, 1, 1, ""));
-                statstopull.Add(new StatisticsClassWrapper(cat, "Cargo Transport", ImmaterialResourceManager.Resource.CargoTransport, 1, 1, ""));
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Budget", servicesincome - servicesexpenses),onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Income", servicesincome), onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Expenses", servicesexpenses), onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Entertainment", ImmaterialResourceManager.Resource.Entertainment, 1, 1, ""), onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Attractiveness", ImmaterialResourceManager.Resource.Attractiveness, 1, 1, ""), onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Cargo Transport", ImmaterialResourceManager.Resource.CargoTransport, 1, 1, ""), onlyenabled);
                 //statstopull.Add(new StatisticsClassWrapper("Misc", "Coverage?", ImmaterialResourceManager.Resource.Coverage, 1, 1, ""));
-                statstopull.Add(new StatisticsClassWrapper(cat, "Density", ImmaterialResourceManager.Resource.Density, 1, 1, ""));
-                statstopull.Add(new StatisticsClassWrapper(cat, "Land Value", ImmaterialResourceManager.Resource.LandValue, 1, 1, "₡/m²"));
-                statstopull.Add(new StatisticsClassWrapper(cat, "ImmaterialResource", StatisticType.ImmaterialResource, 1000, 1, "M"));
-                statstopull.Add(new StatisticsClassWrapper(cat, "Goods Produced", StatisticType.GoodsProduced, 1000, 1, "K"));
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Density", ImmaterialResourceManager.Resource.Density, 1, 1, ""), onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Land Value", ImmaterialResourceManager.Resource.LandValue, 1, 1, "₡/m²"), onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "ImmaterialResource", StatisticType.ImmaterialResource, 1000, 1, "M"), onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Goods Produced", StatisticType.GoodsProduced, 1000, 1, "K"), onlyenabled);
                 catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, servicesexpenses.ToString(), servicesincome.ToString(), "InfoIconLandValue"));
                 statstopull = new List<StatisticsClassWrapper>();
             }
 
             cat = "Citizens";
-            //if (CSLStatsPanelConfigSettings.isCatActive(cat))
+            if (CSLStatsPanelConfigSettings.isCatActive(cat) || !onlyenabled)
             {
 
-                statstopull.Add(new StatisticsClassWrapper(cat, "Count", ds.citizencount, 2, ""));
-                statstopull.Add(new StatisticsClassWrapper(cat, "Move Rate", StatisticType.MoveRate, 1, 1, ""));
-                statstopull.Add(new StatisticsClassWrapper(cat, "Birth Rate", StatisticType.BirthRate, 1, 1, ""));
-                statstopull.Add(new StatisticsClassWrapper(cat, "Death Rate", StatisticType.DeathRate, 1, 1, ""));
-                statstopull.Add(new StatisticsClassWrapper(cat, "Eligible Workers", StatisticType.EligibleWorkers, 1, 1, ""));
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Count", ds.citizencount, 2, ""),onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Move Rate", StatisticType.MoveRate, 1, 1, ""), onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Birth Rate", StatisticType.BirthRate, 1, 1, ""), onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Death Rate", StatisticType.DeathRate, 1, 1, ""), onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Eligible Workers", StatisticType.EligibleWorkers, 1, 1, ""), onlyenabled);
                 statstopull.Add(new StatisticsClassWrapper(cat, "Unemployed", StatisticType.Unemployed, 1, 1, ""));
                 catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Death Rate", "Birth Rate", "InfoIconPopulation"));
                 statstopull = new List<StatisticsClassWrapper>();
             }
 
             cat = "Education";
-            //if (CSLStatsPanelConfigSettings.isCatActive(cat))
+            if (CSLStatsPanelConfigSettings.isCatActive(cat) || !onlyenabled)
             {
 
-                statstopull.Add(new StatisticsClassWrapper(cat, "Educated", StatisticType.EducatedCount, 1, 1, ""));
-                statstopull.Add(new StatisticsClassWrapper(cat, "Students", StatisticType.StudentCount, 1, 1, ""));
-                statstopull.Add(new StatisticsClassWrapper(cat, "Max Students", StatisticType.EducationCapacity, 1, 1, ""));
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Educated", StatisticType.EducatedCount, 1, 1, ""),onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Students", StatisticType.StudentCount, 1, 1, ""),onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Max Students", StatisticType.EducationCapacity, 1, 1, ""),onlyenabled);
                 catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Students", "Max Students", "InfoIconEducation", true));
                 statstopull = new List<StatisticsClassWrapper>();
             }
 
             cat = "Crime";
-            //if (CSLStatsPanelConfigSettings.isCatActive(cat))
+            if (CSLStatsPanelConfigSettings.isCatActive(cat) || !onlyenabled)
             {
 
-                statstopull.Add(new StatisticsClassWrapper(cat, "Crime Rate", ds.finalcrimerate, 2, "%"));
-                statstopull.Add(new StatisticsClassWrapper(cat, "Crimes", StatisticType.CrimeRate, 1, 1, ""));
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Crime Rate", ds.finalcrimerate, 2, "%"),onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Crimes", StatisticType.CrimeRate, 1, 1, ""),onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Vehicles Used", vs.policecarsinuse),onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Vehicles Total", bs.policecars),onlyenabled);
                 catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Crime Rate", "20", "InfoIconCrime"));
                 statstopull = new List<StatisticsClassWrapper>();
             }
 
             cat = "Tourists";
-            //if (CSLStatsPanelConfigSettings.isCatActive(cat))
+            if (CSLStatsPanelConfigSettings.isCatActive(cat) || !onlyenabled)
             {
 
-                statstopull.Add(new StatisticsClassWrapper(cat, "Visits", StatisticType.TouristVisits, 1, 1, ""));
-                statstopull.Add(new StatisticsClassWrapper(cat, "Incoming", StatisticType.IncomingTourists, 1, 1, ""));
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Visits", StatisticType.TouristVisits, 1, 1, ""),onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Incoming", StatisticType.IncomingTourists, 1, 1, ""),onlyenabled);
                 catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "", "", "InfoIconPublicTransportPressed"));
                 statstopull = new List<StatisticsClassWrapper>();
             }
 
             cat = "Public Transit";
-            //if (CSLStatsPanelConfigSettings.isCatActive(cat))
+            if (CSLStatsPanelConfigSettings.isCatActive(cat) || !onlyenabled)
             {
 
-                statstopull.Add(new StatisticsClassWrapper(cat, "Availability", ImmaterialResourceManager.Resource.PublicTransport, 1, 1, "%"));
-                statstopull.Add(new StatisticsClassWrapper(cat, "Avg Passengers", StatisticType.AveragePassengers, 1, 1, ""));
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Availability", ImmaterialResourceManager.Resource.PublicTransport, 1, 1, "%"),onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Avg Passengers", StatisticType.AveragePassengers, 1, 1, ""), onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Busses", vs.passengerbusses), onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Metro", vs.passengermetro), onlyenabled);
+                //StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Trains", vs.passengertrains), onlyenabled);
+                //StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Ships", vs.passengerships), onlyenabled);
+                //StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Planes", vs.passengerplanes), onlyenabled);
                 catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "80", "Availability", "InfoIconPublicTransport"));
                 statstopull = new List<StatisticsClassWrapper>();
             }
 
             cat = "Pollution";
-            //if (CSLStatsPanelConfigSettings.isCatActive(cat))
+            if (CSLStatsPanelConfigSettings.isCatActive(cat) || !onlyenabled)
             {
-                statstopull.Add(new StatisticsClassWrapper(cat, "Noise", ImmaterialResourceManager.Resource.NoisePollution, 1, 1, "%"));
-                statstopull.Add(new StatisticsClassWrapper(cat, "Ground", ds.groundpollution, 2, "%"));
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Noise", ImmaterialResourceManager.Resource.NoisePollution, 1, 1, "%"),onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Ground", ds.groundpollution, 2, "%"),onlyenabled);
                 catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "", "", "InfoIconPollution"));
                 statstopull = new List<StatisticsClassWrapper>();
             }
 
 
             cat = "System Stats";
-            statstopull.Add(new StatisticsClassWrapper(cat, "FPS", ThreadingCSLStatsMod.framespersecond));
-            //statstopull.Add(new StatisticsClassWrapper(cat, "CPU", ThreadingCSLStatsMod.cpuCounter.NextValue(), 2, "%"));
-            //statstopull.Add(new StatisticsClassWrapper(cat, "RAM", ThreadingCSLStatsMod.ramCounter.NextValue(), 2, "%"));
-
-            
-
-            catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "", "", "ToolbarIconHelp"));
-            statstopull = new List<StatisticsClassWrapper>();
-
+            if (CSLStatsPanelConfigSettings.isCatActive(cat) || !onlyenabled)
+            {
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "FPS", ThreadingCSLStatsMod.framespersecond),onlyenabled);
+                //statstopull.Add(new StatisticsClassWrapper(cat, "CPU", ThreadingCSLStatsMod.cpuCounter.NextValue(), 2, "%"));
+                //statstopull.Add(new StatisticsClassWrapper(cat, "RAM", ThreadingCSLStatsMod.ramCounter.NextValue(), 2, "%"));
+                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "", "", "ToolbarIconHelp"));
+                statstopull = new List<StatisticsClassWrapper>();
+            }
             return catstopull;
         }
 
@@ -502,121 +682,46 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
 
         private static IncomeExpensesPoll[] basicExpensesPolls;
         private static IncomeExpensesPoll[] basicIncomePolls;
-        private static IncomeExpensesPoll[] residentialDetailIncomePolls;
-        private static IncomeExpensesPoll[] residentialLowDetailIncomePolls;
-        private static IncomeExpensesPoll[] residentialHighDetailIncomePolls;
-        private static IncomeExpensesPoll[] publicTransportDetailIncomePolls;
         private static IncomeExpensesPoll[] publicTransportDetailExpensesPolls;
-        private static IncomeExpensesPoll[] commercialDetailIncomePolls;
-        private static IncomeExpensesPoll[] commercialLowDetailIncomePolls;
-        private static IncomeExpensesPoll[] commercialHighDetailIncomePolls;
-        private static IncomeExpensesPoll[] industrialDetailIncomePolls;
-        private static IncomeExpensesPoll[] officeDetailIncomePolls;
         private static IncomeExpensesPoll[] budgetExpensesPolls;
 
         private static void InitializePolls()
         {
             basicExpensesPolls = new IncomeExpensesPoll[]
 		    {
-			    new IncomeExpensesPoll(ItemClass.Service.Road, null, "RoadsTotal"),
-			    new IncomeExpensesPoll(ItemClass.Service.Electricity, null, "ElectricityTotal"),
-			    new IncomeExpensesPoll(ItemClass.Service.Water, null, "WaterTotal"),
-			    new IncomeExpensesPoll(ItemClass.Service.Garbage, null, "GarbageTotal"),
-			    new IncomeExpensesPoll(ItemClass.Service.HealthCare, null, "HealthcareTotal"),
-			    new IncomeExpensesPoll(ItemClass.Service.FireDepartment, null, "FireDepartmentTotal"),
-			    new IncomeExpensesPoll(ItemClass.Service.PoliceDepartment, null, "PoliceDepartmentTotal"),
-			    new IncomeExpensesPoll(ItemClass.Service.Education, null, "EducationTotal"),
-			    new IncomeExpensesPoll(ItemClass.Service.Monument, null, "MonumentsTotal"),
-			    new IncomeExpensesPoll(ItemClass.Service.Beautification, null, "ParksTotal")
+			    new IncomeExpensesPoll(ItemClass.Service.Road, null, null),
+			    new IncomeExpensesPoll(ItemClass.Service.Electricity, null, null),
+			    new IncomeExpensesPoll(ItemClass.Service.Water, null, null),
+			    new IncomeExpensesPoll(ItemClass.Service.Garbage, null, null),
+			    new IncomeExpensesPoll(ItemClass.Service.HealthCare, null, null),
+			    new IncomeExpensesPoll(ItemClass.Service.FireDepartment, null, null),
+			    new IncomeExpensesPoll(ItemClass.Service.PoliceDepartment, null, null),
+			    new IncomeExpensesPoll(ItemClass.Service.Education, null, null),
+			    new IncomeExpensesPoll(ItemClass.Service.Monument, null, null),
+			    new IncomeExpensesPoll(ItemClass.Service.Beautification, null, null)
 		    }; 
             basicIncomePolls = new IncomeExpensesPoll[]
 		    {
-			    new IncomeExpensesPoll(ItemClass.Service.None, "IncomeTotal", "ExpensesTotal"),
-			    new IncomeExpensesPoll(ItemClass.Service.Residential, "IncomeResidentialTotal", null),
-			    new IncomeExpensesPoll(ItemClass.Service.Commercial, "IncomeCommercialTotal", null),
-			    new IncomeExpensesPoll(ItemClass.Service.Industrial, "IncomeIndustrialTotal", null),
-			    new IncomeExpensesPoll(ItemClass.Service.Office, "IncomeOfficeTotal", null),
-			    new IncomeExpensesPoll(ItemClass.Service.PublicTransport, "IncomePublicTransportTotal", "PublicTransportTotal"),
-			    new IncomeExpensesPoll(ItemClass.Service.Residential, ItemClass.SubService.ResidentialLow, "IncomeResidentialLow", null),
-			    new IncomeExpensesPoll(ItemClass.Service.Residential, ItemClass.SubService.ResidentialHigh, "IncomeResidentialHigh", null),
-			    new IncomeExpensesPoll(ItemClass.Service.Commercial, ItemClass.SubService.CommercialLow, "IncomeCommercialLow", null),
-			    new IncomeExpensesPoll(ItemClass.Service.Commercial, ItemClass.SubService.CommercialHigh, "IncomeCommercialHigh", null),
-			    new IncomeExpensesPoll(ItemClass.Service.Tourism, "IncomeCommercialTourist", null),
-			    new IncomeExpensesPoll(ItemClass.Service.Citizen, "IncomeCommercialCitizen", null)
-		    };
-            residentialDetailIncomePolls = new IncomeExpensesPoll[]
-		    {
-			    new IncomeExpensesPoll(ItemClass.Service.Residential, ItemClass.SubService.None, ItemClass.Level.Level1, "L1", null),
-			    new IncomeExpensesPoll(ItemClass.Service.Residential, ItemClass.SubService.None, ItemClass.Level.Level2, "L2", null),
-			    new IncomeExpensesPoll(ItemClass.Service.Residential, ItemClass.SubService.None, ItemClass.Level.Level3, "L3", null),
-			    new IncomeExpensesPoll(ItemClass.Service.Residential, ItemClass.SubService.None, ItemClass.Level.Level4, "L4", null),
-			    new IncomeExpensesPoll(ItemClass.Service.Residential, ItemClass.SubService.None, ItemClass.Level.Level5, "L5", null)
-		    };
-            residentialLowDetailIncomePolls = new IncomeExpensesPoll[]
-		    {
-			    new IncomeExpensesPoll(ItemClass.Service.Residential, ItemClass.SubService.ResidentialLow, ItemClass.Level.Level1, "L1", null),
-			    new IncomeExpensesPoll(ItemClass.Service.Residential, ItemClass.SubService.ResidentialLow, ItemClass.Level.Level2, "L2", null),
-			    new IncomeExpensesPoll(ItemClass.Service.Residential, ItemClass.SubService.ResidentialLow, ItemClass.Level.Level3, "L3", null),
-			    new IncomeExpensesPoll(ItemClass.Service.Residential, ItemClass.SubService.ResidentialLow, ItemClass.Level.Level4, "L4", null),
-			    new IncomeExpensesPoll(ItemClass.Service.Residential, ItemClass.SubService.ResidentialLow, ItemClass.Level.Level5, "L5", null)
-		    };
-            residentialHighDetailIncomePolls = new IncomeExpensesPoll[]
-		    {
-			    new IncomeExpensesPoll(ItemClass.Service.Residential, ItemClass.SubService.ResidentialHigh, ItemClass.Level.Level1, "L1", null),
-			    new IncomeExpensesPoll(ItemClass.Service.Residential, ItemClass.SubService.ResidentialHigh, ItemClass.Level.Level2, "L2", null),
-			    new IncomeExpensesPoll(ItemClass.Service.Residential, ItemClass.SubService.ResidentialHigh, ItemClass.Level.Level3, "L3", null),
-			    new IncomeExpensesPoll(ItemClass.Service.Residential, ItemClass.SubService.ResidentialHigh, ItemClass.Level.Level4, "L4", null),
-			    new IncomeExpensesPoll(ItemClass.Service.Residential, ItemClass.SubService.ResidentialHigh, ItemClass.Level.Level5, "L5", null)
-		    };
-            publicTransportDetailIncomePolls = new IncomeExpensesPoll[]
-		    {
-			    new IncomeExpensesPoll(ItemClass.Service.PublicTransport, ItemClass.SubService.PublicTransportBus, "L1", null),
-			    new IncomeExpensesPoll(ItemClass.Service.PublicTransport, ItemClass.SubService.PublicTransportMetro, "L2", null),
-			    new IncomeExpensesPoll(ItemClass.Service.PublicTransport, ItemClass.SubService.PublicTransportTrain, "L3", null),
-			    new IncomeExpensesPoll(ItemClass.Service.PublicTransport, ItemClass.SubService.PublicTransportShip, "L4", null),
-			    new IncomeExpensesPoll(ItemClass.Service.PublicTransport, ItemClass.SubService.PublicTransportPlane, "L5", null)
+			    new IncomeExpensesPoll(ItemClass.Service.None, null, null),
+			    new IncomeExpensesPoll(ItemClass.Service.Residential, null, null),
+			    new IncomeExpensesPoll(ItemClass.Service.Commercial, null, null),
+			    new IncomeExpensesPoll(ItemClass.Service.Industrial, null, null),
+			    new IncomeExpensesPoll(ItemClass.Service.Office, null, null),
+			    new IncomeExpensesPoll(ItemClass.Service.PublicTransport, null, null),
+			    new IncomeExpensesPoll(ItemClass.Service.Residential, ItemClass.SubService.ResidentialLow, null, null),
+			    new IncomeExpensesPoll(ItemClass.Service.Residential, ItemClass.SubService.ResidentialHigh, null, null),
+			    new IncomeExpensesPoll(ItemClass.Service.Commercial, ItemClass.SubService.CommercialLow, null, null),
+			    new IncomeExpensesPoll(ItemClass.Service.Commercial, ItemClass.SubService.CommercialHigh, null, null),
+			    new IncomeExpensesPoll(ItemClass.Service.Tourism, null, null),
+			    new IncomeExpensesPoll(ItemClass.Service.Citizen, null, null)
 		    };
             publicTransportDetailExpensesPolls = new IncomeExpensesPoll[]
 		    {
-			    new IncomeExpensesPoll(ItemClass.Service.PublicTransport, ItemClass.SubService.PublicTransportBus, null, "L1"),
-			    new IncomeExpensesPoll(ItemClass.Service.PublicTransport, ItemClass.SubService.PublicTransportMetro, null, "L2"),
-			    new IncomeExpensesPoll(ItemClass.Service.PublicTransport, ItemClass.SubService.PublicTransportTrain, null, "L3"),
-			    new IncomeExpensesPoll(ItemClass.Service.PublicTransport, ItemClass.SubService.PublicTransportShip, null, "L4"),
-			    new IncomeExpensesPoll(ItemClass.Service.PublicTransport, ItemClass.SubService.PublicTransportPlane, null, "L5")
-		    };
-            commercialDetailIncomePolls = new IncomeExpensesPoll[]
-		    {
-			    new IncomeExpensesPoll(ItemClass.Service.Commercial, ItemClass.SubService.None, ItemClass.Level.Level1, "L1", null),
-			    new IncomeExpensesPoll(ItemClass.Service.Commercial, ItemClass.SubService.None, ItemClass.Level.Level2, "L2", null),
-			    new IncomeExpensesPoll(ItemClass.Service.Commercial, ItemClass.SubService.None, ItemClass.Level.Level3, "L3", null)
-		    };
-            commercialLowDetailIncomePolls = new IncomeExpensesPoll[]
-		    {
-			    new IncomeExpensesPoll(ItemClass.Service.Commercial, ItemClass.SubService.CommercialLow, ItemClass.Level.Level1, "L1", null),
-			    new IncomeExpensesPoll(ItemClass.Service.Commercial, ItemClass.SubService.CommercialLow, ItemClass.Level.Level2, "L2", null),
-			    new IncomeExpensesPoll(ItemClass.Service.Commercial, ItemClass.SubService.CommercialLow, ItemClass.Level.Level3, "L3", null)
-		    };
-            commercialHighDetailIncomePolls = new IncomeExpensesPoll[]
-		    {
-			    new IncomeExpensesPoll(ItemClass.Service.Commercial, ItemClass.SubService.CommercialHigh, ItemClass.Level.Level1, "L1", null),
-			    new IncomeExpensesPoll(ItemClass.Service.Commercial, ItemClass.SubService.CommercialHigh, ItemClass.Level.Level2, "L2", null),
-			    new IncomeExpensesPoll(ItemClass.Service.Commercial, ItemClass.SubService.CommercialHigh, ItemClass.Level.Level3, "L3", null)
-		    };
-            industrialDetailIncomePolls = new IncomeExpensesPoll[]
-		    {
-			    new IncomeExpensesPoll(ItemClass.Service.Industrial, ItemClass.SubService.IndustrialGeneric, ItemClass.Level.Level1, "L1", null),
-			    new IncomeExpensesPoll(ItemClass.Service.Industrial, ItemClass.SubService.IndustrialGeneric, ItemClass.Level.Level2, "L2", null),
-			    new IncomeExpensesPoll(ItemClass.Service.Industrial, ItemClass.SubService.IndustrialGeneric, ItemClass.Level.Level3, "L3", null),
-			    new IncomeExpensesPoll(ItemClass.Service.Industrial, ItemClass.SubService.IndustrialFarming, "L4", null),
-			    new IncomeExpensesPoll(ItemClass.Service.Industrial, ItemClass.SubService.IndustrialForestry, "L5", null),
-			    new IncomeExpensesPoll(ItemClass.Service.Industrial, ItemClass.SubService.IndustrialOil, "L6", null),
-			    new IncomeExpensesPoll(ItemClass.Service.Industrial, ItemClass.SubService.IndustrialOre, "L7", null)
-		    };
-            officeDetailIncomePolls = new IncomeExpensesPoll[]
-		    {
-			    new IncomeExpensesPoll(ItemClass.Service.Office, ItemClass.SubService.None, ItemClass.Level.Level1, "L1", null),
-			    new IncomeExpensesPoll(ItemClass.Service.Office, ItemClass.SubService.None, ItemClass.Level.Level2, "L2", null),
-			    new IncomeExpensesPoll(ItemClass.Service.Office, ItemClass.SubService.None, ItemClass.Level.Level3, "L3", null)
+			    new IncomeExpensesPoll(ItemClass.Service.PublicTransport, ItemClass.SubService.PublicTransportBus, null, null),
+			    new IncomeExpensesPoll(ItemClass.Service.PublicTransport, ItemClass.SubService.PublicTransportMetro, null, null),
+			    new IncomeExpensesPoll(ItemClass.Service.PublicTransport, ItemClass.SubService.PublicTransportTrain, null, null),
+			    new IncomeExpensesPoll(ItemClass.Service.PublicTransport, ItemClass.SubService.PublicTransportShip, null, null),
+			    new IncomeExpensesPoll(ItemClass.Service.PublicTransport, ItemClass.SubService.PublicTransportPlane, null, null)
 		    };
             budgetExpensesPolls = new IncomeExpensesPoll[]
 		    {
@@ -747,26 +852,7 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                 }
             }
         }
-        private static void UpdateIncomeExpenses()
-        {
-            for (int i = 0; i < publicTransportDetailExpensesPolls.Length; i++)
-            {
-                publicTransportDetailExpensesPolls[i].Poll(Settings.moneyFormat, LocaleManager.cultureInfo);
-            }
-            for (int j = 0; j < basicIncomePolls.Length; j++)
-            {
-                basicIncomePolls[j].Poll(Settings.moneyFormat, LocaleManager.cultureInfo);
-                //basicIncomePolls[j].Update(base.component);
-            }
-            for (int k = 0; k < basicExpensesPolls.Length; k++)
-            {
-                basicExpensesPolls[k].Poll(Settings.moneyFormat, LocaleManager.cultureInfo);
-                //basicExpensesPolls[k].Update(component);
-            }
-            //m_PoliciesExpenses.text = this.expensesPoliciesTotal;
-            //m_LoansExpenses.text = this.expensesLoansTotal;
-        }
-
+  
         public static long expensesPoliciesTotal
         {
             get
@@ -779,6 +865,8 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                 return policyexpense;
             }
         }
+
     }
+
 }
 

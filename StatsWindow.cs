@@ -13,8 +13,11 @@ namespace CSLStatsPanel
     class StatusWindowInterface
     {
         public static bool initialized = false;
+        public static List<StatisticsCategoryWrapper> cacheddata = null;
+
         //public static UIView uiView;
-        public static CSLStatsMasterWindow myStatsWindowPanel;
+        public static CSLStatsMasterWindow myStatsWindowPanel  = null;
+
         public static bool running = false;
 
         public static void init()
@@ -49,21 +52,10 @@ namespace CSLStatsPanel
             if (CSLStatsPanelConfigSettings.m_DisplayPanel.value) statButton_eventClick(null, null);
 
         }
-
-        public static bool configChanged
+        static void createwindow()
         {
-            get
-            {
-                if (!initialized) return false;
-                if (myStatsWindowPanel == null) return false;
-                return myStatsWindowPanel.configChanged;
-            }
-            set
-            {
-                myStatsWindowPanel.configChanged = value;
-            }
         }
-        
+
         static void statButton_eventClick(UIComponent component, UIMouseEventParameter eventParam)
         {
             if (myStatsWindowPanel == null)
@@ -73,32 +65,20 @@ namespace CSLStatsPanel
                 if (uiView == null) return;
                 myStatsWindowPanel = (CSLStatsMasterWindow)UIView.GetAView().AddUIComponent(typeof(CSLStatsMasterWindow));
                 myStatsWindowPanel.name = "CSLStatsMasterPanel";
-                myStatsWindowPanel.eventStatsConfigReset += new CSLStatsMasterWindow.eventStatsConfigResetHandler(myStatsWindowPanel_eventStatsConfigReset);
-                myStatsWindowPanel.eventConfigTransparencyChanged += new CSLStatsMasterWindow.eventConfigTransparencyChangeHandler(myStatsWindowPanel_eventConfigTransparencyChanged);
+                //myStatsWindowPanel.eventStatsConfigReset += new CSLStatsMasterWindow.eventStatsConfigResetHandler(myStatsWindowPanel_eventStatsConfigReset);
+                //myStatsWindowPanel.eventConfigTransparencyChanged += new CSLStatsMasterWindow.eventConfigTransparencyChangeHandler(myStatsWindowPanel_eventConfigTransparencyChanged);
                 updateText();
                 updateText();
             }
             else
             {
+                ConfigWindow myconfigwindow = (ConfigWindow)UIView.GetAView().FindUIComponent("CLSStatsPanelConfigurationWindow");
+                if (myconfigwindow != null) UIView.DestroyImmediate(myconfigwindow);
                 CSLStatsPanelConfigSettings.m_DisplayPanel.value = false;
                 resetstatswindow();
             }
         }
         public static bool doReset = false;
-        static void myStatsWindowPanel_eventConfigTransparencyChanged(object sender, EventArgs e)
-        {
-            statButton_eventClick(null, null);
-            doReset = true;
-            //statButton_eventClick(null, null);
-        }
-
-        static void myStatsWindowPanel_eventStatsConfigReset(object sender, EventArgs e)
-        {
-            //reset();         
-            statButton_eventClick(null, null);
-            doReset = true;
-            //statButton_eventClick(null, null);
-        }
 
         public static void resetstatswindow()
         {
@@ -112,19 +92,23 @@ namespace CSLStatsPanel
             }
             finally
             {
-                myStatsWindowPanel = null;
+                
                 running = false;
             }
         }
 
-        public static void reset()
+        public static void destroy()
         {
+            ConfigWindow myconfigwindow = (ConfigWindow)UIView.GetAView().FindUIComponent("CLSStatsPanelConfigurationWindow");
+            if (myconfigwindow != null) UIView.DestroyImmediate(myconfigwindow);
+
             resetstatswindow();
             initialized = false;
         }
 
         public static void updateText()
         {
+            if (cacheddata == null) cacheddata = CSLStatsPanelConfigSettings.Categories(true);
             if (myStatsWindowPanel == null)
             {
                 if (doReset)
@@ -136,10 +120,8 @@ namespace CSLStatsPanel
             if (!initialized) return;
             if (running) return;
             running = true;
-            if (configChanged) myStatsWindowPanel.updateText(CSLStatsPanelConfigSettings.Categories(true));
-            configChanged = false;
-            //myStatsWindowPanel.getstats2();
-            myStatsWindowPanel.updateText(CSLStatsPanelConfigSettings.Categories(true));
+            myStatsWindowPanel.updateText(cacheddata);
+            myStatsWindowPanel.Update();
             running = false;
         }
     }
@@ -150,7 +132,7 @@ namespace CSLStatsPanel
         UIResizeHandle myresizepanel;
         UIPanel headerpanel;
         UILabel resizelabel, headertext;
-        bool firstrun = true;
+        public bool firstrun = true;
         bool dragging = false;
 
         int minfontsize = -15, maxfontsize = 20;
@@ -169,6 +151,9 @@ namespace CSLStatsPanel
             isresetting = true;
             if (mousehovertimer != null)
             {
+
+                mousehovertimer.Stop();
+                mousehovertimer.Enabled = false;
                 mousehovertimer_Elapsed(null, null);
             }
             mousehovertimer = null;
@@ -258,16 +243,17 @@ namespace CSLStatsPanel
         void modetoggle_eventClick(UIComponent component, UIMouseEventParameter eventParam)
         {
             CSLStatsPanelConfigSettings.m_MiniMode.value = !CSLStatsPanelConfigSettings.m_MiniMode.value;
+            CSLStatsPanelConfigSettings.m_ConfigChanged.value = true;
             ((UIButton)component).text = (CSLStatsPanelConfigSettings.m_MiniMode.value) ? "Expand" : "Mini";
             component.parent.Focus();
-            myconfigwindow_eventModeConfigChanged(this, EventArgs.Empty);
+            
 
         }
 
-        System.Timers.Timer mousehovertimer;
+        System.Timers.Timer mousehovertimer = null;
         private void MouseIsHovering(UIMouseEventParameter p)
         {
-            if (mousehovertimer != null) mousehovertimer.Enabled = false;
+            if (mousehovertimer != null) mousehovertimer.Stop();
             myStatsWindowPanel.backgroundSprite = "GenericPanel";
             headerpanel.backgroundSprite = "GenericPanel";
             myresizepanel.backgroundSprite = "GenericPanel";
@@ -277,34 +263,46 @@ namespace CSLStatsPanel
                 b.Show();
 
             if (!CSLStatsPanelConfigSettings.m_EnableTransparency.value) return;
-            mousehovertimer = new System.Timers.Timer(50);
-            mousehovertimer.Elapsed += new System.Timers.ElapsedEventHandler(mousehovertimer_Elapsed);
+            
+            //mousehovertimer = new System.Timers.Timer(5);
+            //mousehovertimer.Elapsed += new System.Timers.ElapsedEventHandler(mousehovertimer_Elapsed);
         }
 
         protected override void OnMouseHover(UIMouseEventParameter p)
         {
             MouseIsHovering(p);
         }
+        protected override void OnClick(UIMouseEventParameter p)
+        {
+            this.BringToFront();
+            base.OnClick(p);
+        }
 
         void mousehovertimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
         {
             try
             {
-                mousehovertimer.Enabled = false;
+                if (mousehovertimer != null) mousehovertimer.Enabled = false;
                 myStatsWindowPanel.backgroundSprite = "";
                 headerpanel.backgroundSprite = "";
                 myresizepanel.backgroundSprite = "";
                 headertext.Hide();
+                headertext.Update();
                 UIButton[] mybuttons = myresizepanel.GetComponentsInChildren<UIButton>();
                 foreach (UIButton b in mybuttons)
+                {
                     b.Hide();
+                    b.Update();
+                }
+                this.Update();
             }catch{}
         }
         protected override void OnMouseLeave(UIMouseEventParameter p)
         {
             if (!CSLStatsPanelConfigSettings.m_EnableTransparency.value) return;
-            if (mousehovertimer == null) return;
-            mousehovertimer.Enabled = true;
+            mousehovertimer_Elapsed(null, null);
+            //if (mousehovertimer == null) return;
+            //mousehovertimer.Enabled = true;
         }
 
         public void init()
@@ -353,44 +351,45 @@ namespace CSLStatsPanel
         {
             this.autoSize = false;
             this.autoLayout = false;
-            if (myconfigwindow != null) UIView.DestroyImmediate(myconfigwindow.gameObject);
+            //if (myconfigwindow != null) UIView.DestroyImmediate(myconfigwindow.gameObject);
             base.OnDestroy();
         }
 
-        ConfigWindow myconfigwindow = null;
         void configButton_eventClick(UIComponent component, UIMouseEventParameter eventParam)
         {
+            ConfigWindow myconfigwindow = (ConfigWindow)UIView.GetAView().FindUIComponent("CLSStatsPanelConfigurationWindow"); 
             if (myconfigwindow == null)
             {
-                myconfigwindow = (ConfigWindow)UIView.GetAView().AddUIComponent(typeof(ConfigWindow));
-                myconfigwindow.eventStatsConfigChanged += new ConfigWindow.eventStatsConfigChangedHandler(myconfigwindow_eventStatsConfigChanged);
-                myconfigwindow.eventModeConfigChanged += new ConfigWindow.eventConfigModeChangedHandler(myconfigwindow_eventModeConfigChanged);
-                myconfigwindow.eventStatsConfigReset += new ConfigWindow.eventStatsConfigResetHandler(myconfigwindow_eventStatsConfigReset);
-                myconfigwindow.eventConfigTransparencyChanged += new ConfigWindow.eventConfigTransparencyChangeHandler(myconfigwindow_eventConfigTransparencyChanged);
+                UIView.GetAView().AddUIComponent(typeof(ConfigWindow));
+                //myconfigwindow.eventStatsConfigChanged += new ConfigWindow.eventStatsConfigChangedHandler(myconfigwindow_eventStatsConfigChanged);
+                //myconfigwindow.eventModeConfigChanged += new ConfigWindow.eventConfigModeChangedHandler(myconfigwindow_eventModeConfigChanged);
+                //myconfigwindow.eventStatsConfigReset += new ConfigWindow.eventStatsConfigResetHandler(myconfigwindow_eventStatsConfigReset);
+                //myconfigwindow.eventConfigTransparencyChanged += new ConfigWindow.eventConfigTransparencyChangeHandler(myconfigwindow_eventConfigTransparencyChanged);
             }
             else
             {
-                //UIView.DestroyImmediate(myconfigwindow);
                 UIView.DestroyImmediate(myconfigwindow.gameObject);
-                myconfigwindow = null;
             }
             if (component != null)
                 component.parent.Focus();
         }
 
+        /*
         void myconfigwindow_eventConfigTransparencyChanged(object sender, EventArgs e)
         {
             eventConfigTransparencyChanged(sender, e);
         }
-        public delegate void eventConfigTransparencyChangeHandler(object sender, EventArgs e);
-        public event eventConfigTransparencyChangeHandler eventConfigTransparencyChanged;
-
+         */
+        //public delegate void eventConfigTransparencyChangeHandler(object sender, EventArgs e);
+        //public event eventConfigTransparencyChangeHandler eventConfigTransparencyChanged;
+        /*
         void myconfigwindow_eventStatsConfigReset(object sender, EventArgs e)
         {
             eventStatsConfigReset(sender, e);
         }
-        public delegate void eventStatsConfigResetHandler(object sender, EventArgs e);
-        public event eventStatsConfigResetHandler eventStatsConfigReset;
+         */ 
+        //public delegate void eventStatsConfigResetHandler(object sender, EventArgs e);
+        //public event eventStatsConfigResetHandler eventStatsConfigReset;
 
 
         void myconfigwindow_eventModeConfigChanged(object sender, EventArgs e)
@@ -452,7 +451,7 @@ namespace CSLStatsPanel
             OnSizeChanged();
         }
 
-        public void updateText(List<string> s) { myStatsWindowPanel.updateText(s);}
+        public void updateText(List<string> s) { myStatsWindowPanel.updateText(s); firstrun = false; }
         public void updateText(List<StatisticsCategoryWrapper> l) 
         {
             if (isresetting) return;
@@ -460,6 +459,7 @@ namespace CSLStatsPanel
             if (firstrun) setdefaultpos();
             firstrun = false;
         }
+
         protected override void OnSizeChanged()
         {
             CSLStatsPanelConfigSettings.mySavedFloat windowx = (!CSLStatsPanelConfigSettings.m_MiniMode.value) ? CSLStatsPanelConfigSettings.windowx : CSLStatsPanelConfigSettings.miniwindowx,
@@ -579,10 +579,13 @@ namespace CSLStatsPanel
                         }
 
                     }
+                    subpanel.Value.spritepanel.FitToContents();
                     subpanel.Value.FitToContents();
+                    subpanel.Value.Update();
                 }
 
             }
+            this.Update();
             zooming = false;
             base.OnMouseWheel(p);
         }
@@ -603,7 +606,6 @@ namespace CSLStatsPanel
 
         public override void Start()
         {
-            statlog.log("sub panel started");
             m_issubpanel = true;
             base.m_issubpanel = true;
             base.Start();
@@ -665,7 +667,6 @@ namespace CSLStatsPanel
         public void init()
         {
             if (initialized) return;
-            statlog.log("CSLStatusWindowPanel init - subpanel=" + m_issubpanel.ToString());
             if (!this.m_issubpanel)
             {
                 this.freeScroll = true;
@@ -685,17 +686,14 @@ namespace CSLStatsPanel
 
         public void updateText(List<StatisticsCategoryWrapper> categorydata)
         {
-            statlog.log("update text catwrapper initialized=" + initialized.ToString() + " running=" + running.ToString());
             if (!initialized) init();
             if (!initialized) return;
             if (running) return;
             running = true;
 
-            statlog.log("reseting stringbuilders");
             foreach (KeyValuePair<string, CSLStatusWindowSubPanel> p in m_categories)
                 p.Value.m_stringbuilder = new List<string>();
 
-            statlog.log("looping categories" + categorydata.Count().ToString());
             for (int i = 0; i < categorydata.Count(); i++)
             {
                 if (categorydata[i].m_scwlist.Count() == 0) continue;
@@ -704,7 +702,6 @@ namespace CSLStatsPanel
 
                 if (!m_categories.Keys.Contains(currentcat))
                 {
-                    statlog.log("adding category " + currentcat);
                     m_categories.Add(currentcat, (CSLStatusWindowSubPanel)this.AddUIComponent(typeof(CSLStatusWindowSubPanel)));
                     if (!string.IsNullOrEmpty(categorydata[i].m_sprite))
                     {
@@ -793,9 +790,10 @@ namespace CSLStatsPanel
                 }
             }
 
+            
+
             foreach (KeyValuePair<string, CSLStatusWindowSubPanel> p in m_categories)
             {
-                statlog.log("calling updatetext on subpanel " + p.Key);
                 p.Value.updateText(p.Value.m_stringbuilder);
                 p.Value.m_stringbuilder = new List<string>();
             }
@@ -809,9 +807,10 @@ namespace CSLStatsPanel
             firstrun = false;
             running = false;
         }
+
+  
         public void updateText(List<string> TextFields)
         {
-            statlog.log("update text initialized=" + initialized.ToString() + " running=" + running.ToString());
             if (!initialized) init();
             if (running) return;
             running = true;
@@ -824,15 +823,12 @@ namespace CSLStatsPanel
                     labelsadded = true;
                     m_textfields.Add(this.AddUIComponent<CSLStatsPanelLabel>());
                     m_textfields[i].name = "CSLStatsLabel_" + i.ToString();
-                    statlog.log("creating label " + m_textfields[i].name);
                 }
                 else if (usesinglefield) s += TextFields[i] + "\n";
                     
                 if (!usesinglefield)
                 {
-                    statlog.log("setting name: " + m_textfields[i].name + " text:  " + TextFields[i]);
                     m_textfields[i].text = TextFields[i];
-                    
                 }
 
             }
@@ -842,10 +838,13 @@ namespace CSLStatsPanel
             {
                 if (spritepanel != null)
                 {
-                    if (firstrun) spritepanel.FitChildrenHorizontally();
-                    spritepanel.FitToContents();
+                    if (firstrun)
+                    {
+                        spritepanel.FitChildrenHorizontally();
+                        spritepanel.FitToContents();
+                    }
                 }
-                this.FitChildrenVertically();
+                //this.FitChildrenVertically();
                 this.FitToContents();
             }
             running = false;

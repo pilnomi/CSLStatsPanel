@@ -27,7 +27,7 @@ namespace CSLStatsPanel
             this.autoLayoutPadding = new RectOffset(0, 0, 0, 0);
             this.width = 1000;
             this.height = 680;
-   
+            this.name = "CLSStatsPanelConfigurationWindow";
 
         }
 
@@ -47,10 +47,10 @@ namespace CSLStatsPanel
             myConfigWindowPanel.width = this.width;
             myConfigWindowPanel.name = "CSLStatsConfigurationPanel";
             myConfigWindowPanel.color = new Color32(0, 0, 0, 255);
-            myConfigWindowPanel.eventStatsConfigChanged += new ConfigSettingsWindow.eventStatsConfigChangedHandler(myConfigWindowPanel_eventStatsConfigChanged);
-            myConfigWindowPanel.eventModeConfigChanged += new ConfigSettingsWindow.eventConfigModeChangedHandler(myConfigWindowPanel_eventModeConfigChanged);
-            myConfigWindowPanel.eventConfigReset += new ConfigSettingsWindow.eventConfigResetHandler(myConfigWindowPanel_eventConfigReset);
-            myConfigWindowPanel.eventConfigTransparencyChanged += new ConfigSettingsWindow.eventConfigTransparencyChangeHandler(myConfigWindowPanel_eventConfigTransparencyChanged);
+            //myConfigWindowPanel.eventStatsConfigChanged += new ConfigSettingsWindow.eventStatsConfigChangedHandler(myConfigWindowPanel_eventStatsConfigChanged);
+            //myConfigWindowPanel.eventModeConfigChanged += new ConfigSettingsWindow.eventConfigModeChangedHandler(myConfigWindowPanel_eventModeConfigChanged);
+            //myConfigWindowPanel.eventConfigReset += new ConfigSettingsWindow.eventConfigResetHandler(myConfigWindowPanel_eventConfigReset);
+            //myConfigWindowPanel.eventConfigTransparencyChanged += new ConfigSettingsWindow.eventConfigTransparencyChangeHandler(myConfigWindowPanel_eventConfigTransparencyChanged);
             myresizepanel = (UIResizeHandle)this.AddUIComponent(typeof(UIResizeHandle));
             myresizepanel.name = "CSLStatsConfigurationResizePanel";
             myresizepanel.height = 20;
@@ -85,8 +85,10 @@ namespace CSLStatsPanel
 
             base.Start();
             OnSizeChanged();
+            this.Update();
         }
 
+        /*
         void myConfigWindowPanel_eventConfigTransparencyChanged(object sender, EventArgs e)
         {
             eventConfigTransparencyChanged(sender, e);
@@ -120,11 +122,16 @@ namespace CSLStatsPanel
 
         public delegate void eventConfigTransparencyChangeHandler(object sender, EventArgs e);
         public event eventConfigTransparencyChangeHandler eventConfigTransparencyChanged;
-
+        */
 
         void CloseButton_eventClick(UIComponent component, UIMouseEventParameter eventParam)
         {
-            UIView.Destroy(this);
+            try
+            {
+                myresizepanel.enabled = false;
+                UIView.DestroyImmediate(this);
+            }
+            catch { }
         }
 
         protected override void OnMouseDown(UIMouseEventParameter p)
@@ -145,6 +152,11 @@ namespace CSLStatsPanel
             if (dragging) this.position = new Vector3(this.position.x + p.moveDelta.x,
              this.position.y + p.moveDelta.y,
              this.position.z);
+        }
+        protected override void OnClick(UIMouseEventParameter p)
+        {
+            this.BringToFront();
+            base.OnClick(p);
         }
         protected override void OnSizeChanged()
         {
@@ -302,27 +314,31 @@ namespace CSLStatsPanel
         void enableTransparency_eventClick(UIComponent component, UIMouseEventParameter eventParam)
         {
             CSLStatsPanelConfigSettings.m_EnableTransparency.value = !CSLStatsPanelConfigSettings.m_EnableTransparency.value;
+            CSLStatsPanelConfigSettings.m_ConfigChanged.value = true;
             ((UIButton)component).textColor = (CSLStatsPanelConfigSettings.m_EnableTransparency.value) ? selectedcolor : deselectedcolor;
             //component.parent.Focus();
-            eventConfigTransparencyChanged(this, EventArgs.Empty);
+            //eventConfigTransparencyChanged(this, EventArgs.Empty);
         }
 
-        public delegate void eventConfigTransparencyChangeHandler(object sender, EventArgs e);
-        public event eventConfigTransparencyChangeHandler eventConfigTransparencyChanged;
+        //public delegate void eventConfigTransparencyChangeHandler(object sender, EventArgs e);
+        //public event eventConfigTransparencyChangeHandler eventConfigTransparencyChanged;
 
         void resetConfig_eventClick(UIComponent component, UIMouseEventParameter eventParam)
         {
             CSLStatsPanelConfigSettings.resetConfig();
-            eventConfigReset(this, EventArgs.Empty);
+            CSLStatsPanelConfigSettings.m_ConfigChanged.value = true;
+            UIView.DestroyImmediate(this.parent);
+            //eventConfigReset(this, EventArgs.Empty);
             
         }
 
         void showLabelsInMiniMode_eventClick(UIComponent component, UIMouseEventParameter eventParam)
         {
             CSLStatsPanelConfigSettings.m_ShowLabelsInMiniMode.value = !CSLStatsPanelConfigSettings.m_ShowLabelsInMiniMode.value;
+            CSLStatsPanelConfigSettings.m_ConfigChanged.value = true;
             ((UIButton)component).textColor = (CSLStatsPanelConfigSettings.m_ShowLabelsInMiniMode.value) ? selectedcolor : deselectedcolor;
             component.parent.Focus();
-            eventStatsConfigChanged(this, EventArgs.Empty);
+            //eventStatsConfigChanged(this, EventArgs.Empty);
         }
 
         private void setcommonbuttonprops(UIButton b)
@@ -341,30 +357,33 @@ namespace CSLStatsPanel
         void miniMode_eventClick(UIComponent component, UIMouseEventParameter eventParam)
         {
             CSLStatsPanelConfigSettings.m_MiniMode.value = !CSLStatsPanelConfigSettings.m_MiniMode.value;
+            CSLStatsPanelConfigSettings.m_ConfigChanged.value = true;
             UIButton b = (UIButton)component;
             b.textColor = (CSLStatsPanelConfigSettings.m_MiniMode.value) ? selectedcolor : deselectedcolor;
             b.focusedColor = (CSLStatsPanelConfigSettings.m_MiniMode.value) ? selectedcolor : deselectedcolor;
             b.parent.Focus();
-            eventModeConfigChanged(this, EventArgs.Empty);
+            //eventModeConfigChanged(this, EventArgs.Empty);
         }
 
         void displaySummaries_eventClick(UIComponent component, UIMouseEventParameter eventParam)
         {
             CSLStatsPanelConfigSettings.m_EnablePanelSummaries.value = !CSLStatsPanelConfigSettings.m_EnablePanelSummaries.value;
+            CSLStatsPanelConfigSettings.m_ConfigChanged.value = true;
             UIButton b = (UIButton)component;
             b.textColor = (CSLStatsPanelConfigSettings.m_EnablePanelSummaries.value) ? selectedcolor : deselectedcolor;
             b.focusedColor = (CSLStatsPanelConfigSettings.m_EnablePanelSummaries.value) ? selectedcolor : deselectedcolor;
             b.parent.Focus();
-            eventStatsConfigChanged(this, EventArgs.Empty);
+           // eventStatsConfigChanged(this, EventArgs.Empty);
         }
         UIButton useColors;
         void useColors_eventClick(UIComponent component, UIMouseEventParameter eventParam)
         {
             CSLStatsPanelConfigSettings.m_EnablePanelColors.value = !CSLStatsPanelConfigSettings.m_EnablePanelColors.value;
+            CSLStatsPanelConfigSettings.m_ConfigChanged.value = true;
             useColors.textColor = (CSLStatsPanelConfigSettings.m_EnablePanelColors.value) ? selectedcolor : deselectedcolor;
             useColors.focusedColor = (CSLStatsPanelConfigSettings.m_EnablePanelColors.value) ? selectedcolor : deselectedcolor;
             useColors.parent.Focus();
-            eventStatsConfigChanged(this, EventArgs.Empty);
+            //eventStatsConfigChanged(this, EventArgs.Empty);
         }
 
         void incrementLabel_eventClick(UIComponent component, UIMouseEventParameter eventParam)
@@ -450,6 +469,7 @@ namespace CSLStatsPanel
         {
             bool isCatActive = !CSLStatsPanelConfigSettings.isCatActive(component.name);
             CSLStatsPanelConfigSettings.setCatActive(component.name, isCatActive);
+            CSLStatsPanelConfigSettings.m_ConfigChanged.value = true;
 
             UIButton b = (UIButton)component;
             b.textColor = (isCatActive) ? selectedcolor : deselectedcolor;
@@ -459,17 +479,16 @@ namespace CSLStatsPanel
             component.color = (isCatActive) ? selectedcolor : deselectedcolor;
             component.parent.color = component.color;
 
-            eventStatsConfigChanged(this, EventArgs.Empty);
+            //eventStatsConfigChanged(this, EventArgs.Empty);
         }
+        /*
         public delegate void eventConfigResetHandler(object sender, EventArgs e);
         public event eventConfigResetHandler eventConfigReset;
-
-        
         public delegate void eventConfigModeChangedHandler(object sender, EventArgs e);
         public event eventConfigModeChangedHandler eventModeConfigChanged;
         public delegate void eventStatsConfigChangedHandler(object sender, EventArgs e);
         public event eventStatsConfigChangedHandler eventStatsConfigChanged;
-
+        */
         Color32 selectedcolor = new Color32(0, 200, 0, 255),
             deselectedcolor = new Color32(200, 0, 0, 255);
 
@@ -478,15 +497,17 @@ namespace CSLStatsPanel
             string[] mystring = component.name.Split('|');
             bool isStatActive = !CSLStatsPanelConfigSettings.isStatActive(mystring[0], mystring[1]);
             CSLStatsPanelConfigSettings.setStatActive(mystring[0], mystring[1], isStatActive);
+            CSLStatsPanelConfigSettings.m_ConfigChanged.value = true;
 
             UIButton b = (UIButton)component;
             b.textColor = (isStatActive) ? selectedcolor : deselectedcolor;
-            b.focusedColor = (isStatActive) ? selectedcolor : deselectedcolor;
+            b.focusedColor = b.textColor;
+            b.focusedTextColor = b.textColor;
             b.parent.Focus();
 
             component.color = (isStatActive) ? selectedcolor : deselectedcolor;
             //component.parent.color = component.color;
-            eventStatsConfigChanged(this, EventArgs.Empty);
+            //eventStatsConfigChanged(this, EventArgs.Empty);
 
         }
 
@@ -620,6 +641,8 @@ namespace CSLStatsPanel
             fontchange = new mySavedInt("CSLStatsPanelTextScaleDelta", 0),
             minifontchange = new mySavedInt("CSLStatsMiniPanelTextScaleDelta", 0);
 
+        public static mySavedBool m_ConfigChanged = new mySavedBool(m_settingsprefix + "ConfigChanged", false);
+
         public static mySavedBool m_ShowLabelsInMiniMode = new mySavedBool(m_settingsprefix + "ShowLabelsInMiniMode", true);
 
         public static mySavedBool m_MiniMode = new mySavedBool(m_settingsprefix + "EnableMiniMode", false);
@@ -651,20 +674,19 @@ namespace CSLStatsPanel
             set { m_transparentPanelColor.value = value; }
         }
 
-        private static List<StatisticsCategoryWrapper> m_categories
+        private static List<StatisticsCategoryWrapper> m_categories(bool onlyactive = true)
         {
-            get{ return MasterStatsWrapper.getstats3(); }
+            return MasterStatsWrapper.getstats3(onlyactive);
         }
 
         public static List<StatisticsCategoryWrapper> Categories(bool onlyactive=true)
         {
-            if (!onlyactive ) return m_categories;
+            if (!onlyactive ) return m_categories(onlyactive);
             List<StatisticsCategoryWrapper> t = new List<StatisticsCategoryWrapper>();
-            List<StatisticsCategoryWrapper> x = m_categories;
+            List<StatisticsCategoryWrapper> x = m_categories(onlyactive);
             for (int i = 0; i < x.Count(); i++)
             {
                 bool isactive = isCatActive(x[i].m_category);
-                statlog.log(x[i].m_category + " is active: " + isactive.ToString());
                 if (isactive) t.Add(x[i]);
             }
             return t;

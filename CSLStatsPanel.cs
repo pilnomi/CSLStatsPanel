@@ -26,57 +26,57 @@ namespace CSLStatsPanel
         
         
     }
-    public static class ThreadTracker
-    {
-        public static ThreadingCSLStatsMod instance = null;
 
-    }
     public class LoadingCSLStatsMod : LoadingExtensionBase
     {
         //handles loading the threading mod
         //seems to avoid the "load game" problem while in-game
         public override void OnLevelLoaded(LoadMode mode)
         {
+            base.OnLevelLoaded(mode);
+
             if (mode != LoadMode.LoadGame && mode != LoadMode.NewGame)
                 return;
-            //DebugOutputPanel.AddMessage(ColossalFramework.Plugins.PluginManager.MessageType.Message, "LoadingCSLStatsMod.OnLevelLoaded");
-            //UnityEngine.Debug.Log("LoadingCSLStatsMod.OnLevelLoaded");
-            if (ThreadTracker.instance == null) ThreadTracker.instance = new ThreadingCSLStatsMod();
-            ThreadTracker.instance.m_initialized = false;
-            StatusWindowInterface.reset();
-            ThreadTracker.instance.init();
-            
-            base.OnLevelLoaded(mode);
+            //statlog.log("LoadingCSLStatsMod.OnLevelLoaded");
+            StatusWindowInterface.destroy();
+            if (ThreadingCSLStatsMod.instance != null)
+            {
+                ThreadingCSLStatsMod.instance.m_initialized = false;
+                statlog.log("reset ThreadingCSLStatsMod");
+            }
         }
 
         public override void OnLevelUnloading()
         {
-            StatusWindowInterface.reset();
-            ThreadTracker.instance = null;
+            StatusWindowInterface.destroy();
             base.OnLevelUnloading();
         }
 
         public override void OnReleased()
         {
-            StatusWindowInterface.reset();
-            ThreadTracker.instance = null;
+            StatusWindowInterface.destroy();
             base.OnReleased();
         }
     }
+
+    
     public class ThreadingCSLStatsMod : ThreadingExtensionBase
     {
+        public static ThreadingCSLStatsMod instance = null;
         public bool m_initialized = false;
 
         ~ThreadingCSLStatsMod()
         {
+            refreshtimer.Stop();
             m_initialized = false;
-            StatusWindowInterface.reset();
+            StatusWindowInterface.destroy();
         }
 
         public override void OnReleased()
         {
+            refreshtimer.Stop();
             m_initialized = false;
-            StatusWindowInterface.reset();
+            StatusWindowInterface.destroy();
             base.OnReleased();
         }
 
@@ -85,60 +85,74 @@ namespace CSLStatsPanel
             if (m_initialized == true) return true;
             StatusWindowInterface.init();
             m_initialized = true;
+            settimer();
             return true;
         }
 
+        public override void OnCreated(IThreading threading)
+        {
+            instance = this;
+            base.OnCreated(threading);
+        }
+        
 
-        //DateTime Time = DateTime.Now;
         public static double framespersecond = 0.0f;
         private static double m_realTimeDelta = 0.0f;
         private int minimumFramesBetweenCalls = 20;
         static int numberofcalls = 0; //track approximate fps
+        public System.Timers.Timer refreshtimer = new System.Timers.Timer();
+
+        public void settimer()
+        {
+            refreshtimer = new System.Timers.Timer(1000);
+            refreshtimer.Elapsed += new System.Timers.ElapsedEventHandler(refreshtimer_Elapsed);
+            refreshtimer.Enabled = true;
+            refreshtimer.Start();
+        }
+
+        void refreshtimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
+        {
+            StatusWindowInterface.cacheddata = CSLStatsPanelConfigSettings.Categories(true);
+        }
+
 
         //called about ~60 times per second. (or max frame rate user is getting atm imagine)
         public override void OnUpdate(float realTimeDelta, float simulationTimeDelta)
         {
+            if (!m_initialized) init();
             numberofcalls++;
             m_realTimeDelta += realTimeDelta;
-            int myrefreshrate = CSLStatsPanelConfigSettings.PanelRefreshRate;
-            
-            if (StatusWindowInterface.configChanged) myrefreshrate = 1; // temporarily change update rate to 1sec after config change
-            if (StatusWindowInterface.doReset) myrefreshrate = 1;
-            if (StatusWindowInterface.running) return;
-            if (m_realTimeDelta < myrefreshrate || numberofcalls < minimumFramesBetweenCalls) return;
             framespersecond = numberofcalls / m_realTimeDelta;
-                
-            //Time = DateTime.Now;
+
+            int myrefreshrate = CSLStatsPanelConfigSettings.PanelRefreshRate,
+                myminframes = minimumFramesBetweenCalls;
+            if (CSLStatsPanelConfigSettings.m_ConfigChanged.value)
+            {
+                StatusWindowInterface.cacheddata = null;
+                CSLStatsPanelConfigSettings.m_ConfigChanged.value = false;
+                StatusWindowInterface.resetstatswindow();
+                StatusWindowInterface.doReset = true;
+                myrefreshrate = 0; myminframes = 2;
+            }
+            //if (StatusWindowInterface.configChanged) myrefreshrate = 1; // temporarily change update rate to 1sec after config change
+            //if (StatusWindowInterface.doReset) myrefreshrate = 1;
+            if (StatusWindowInterface.running) return;
+
+            if (m_realTimeDelta < myrefreshrate || numberofcalls < myminframes) return;
             numberofcalls = 0;
             m_realTimeDelta = 0.0f;
-            if (m_initialized)
+            try
             {
-                try
-                {
-                    StatusWindowInterface.updateText();
-                }
-                catch (Exception ex) { UnityEngine.Debug.Log(ex.Message); }
+                StatusWindowInterface.updateText();
             }
-            else
-            {
-                init();  //were we not able to init previously? if so try now.
-                if (m_initialized) StatusWindowInterface.updateText(); ;
-            }
-
-            base.OnUpdate(realTimeDelta, simulationTimeDelta);
+            catch (Exception ex) { statlog.log(ex.Message); }
         }
     }
 
     
     public static class statlog
         {
-            public static void log(StatisticType st)
-            {
-                log(st.ToString());
-            }
-
             public static bool enablelogging = false;
-            //static bool keeponlylastmessage = false;
             public static void log(string logtext)
             {
                 if (!enablelogging) return;

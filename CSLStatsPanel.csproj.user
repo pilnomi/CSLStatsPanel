@@ -3,4 +3,10 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <EnableUnmanagedDebugging>true</EnableUnmanagedDebugging>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
+    <StartAction>Project</StartAction>
+    <StartProgram>steam://rungameid/255710</StartProgram>
+    <StartWorkingDirectory>C:\Program Files (x86)\Steam\steamapps\common\Cities_Skylines\</StartWorkingDirectory>
+    <StartURL>steam://rungameid/255710</StartURL>
+  </PropertyGroup>
 </Project>
