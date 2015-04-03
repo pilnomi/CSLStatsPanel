@@ -5,7 +5,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-
+/*
+ * CSL Stats Panel, a UI mod for Cities: Skylines
+ * Created and maintained by Operation40
+ * Github: https://github.com/pilnomi/CSLStatsPanel
+ */
 namespace CSLStatsPanel 
 {
 
@@ -104,6 +108,7 @@ namespace CSLStatsPanel
 
         public void settimer()
         {
+            
             refreshtimer = new System.Timers.Timer(1000);
             refreshtimer.Elapsed += new System.Timers.ElapsedEventHandler(refreshtimer_Elapsed);
             refreshtimer.Enabled = true;
@@ -112,7 +117,19 @@ namespace CSLStatsPanel
 
         void refreshtimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
         {
-            StatusWindowInterface.cacheddata = CSLStatsPanelConfigSettings.Categories(true);
+            refreshtimer.Stop();
+            try
+            {
+                StatusWindowInterface.cacheddata = CSLStatsPanelConfigSettings.Categories(true);
+            }
+            finally
+            {
+                int myrefreshrate = CSLStatsPanelConfigSettings.PanelRefreshRate;
+                refreshtimer.Interval = myrefreshrate * 1000 - 10;
+                if (refreshtimer.Interval < 990) refreshtimer.Interval = 990;
+                refreshtimer.Start();
+            }
+            
         }
 
 

@@ -26,7 +26,7 @@ namespace CSLStatsPanel
             this.autoLayout = true;
             this.autoLayoutPadding = new RectOffset(0, 0, 0, 0);
             this.width = 1000;
-            this.height = 680;
+            this.height = 710;
             this.name = "CLSStatsPanelConfigurationWindow";
 
         }
@@ -260,16 +260,18 @@ namespace CSLStatsPanel
             p.autoLayoutPadding = new RectOffset(5, 5, 5, 5);
             p.autoLayoutDirection = LayoutDirection.Horizontal;
             p.autoLayout = true;
-
+            //p.wrapLayout = true;
             useColors = p.AddUIComponent<UIButton>();
             setcommonbuttonprops(useColors);
             useColors.text = "Use Panel Colors";
+            useColors.tooltip = "Think colors are over-rated?  Toggle them on/off";
             useColors.eventClick += new MouseEventHandler(useColors_eventClick);
             useColors.textColor = (CSLStatsPanelConfigSettings.m_EnablePanelColors.value) ? selectedcolor : deselectedcolor;
 
             UIButton displaySummaries = p.AddUIComponent<UIButton>();
             setcommonbuttonprops(displaySummaries);
             displaySummaries.text = "% Summaries";
+            displaySummaries.tooltip = "Toggle display of % summaries in expanded mode.";
             displaySummaries.textColor = (CSLStatsPanelConfigSettings.m_EnablePanelSummaries.value) ? selectedcolor : deselectedcolor;
             displaySummaries.eventClick += new MouseEventHandler(displaySummaries_eventClick);
 
@@ -282,6 +284,7 @@ namespace CSLStatsPanel
             UIButton showLabelsInMiniMode = p.AddUIComponent<UIButton>();
             setcommonbuttonprops(showLabelsInMiniMode);
             showLabelsInMiniMode.text = "Labels in Mini-Mode";
+            showLabelsInMiniMode.tooltip = "Show service description labels while in mini-mode, turn this off to see only the icons";
             showLabelsInMiniMode.autoSize = true;
             showLabelsInMiniMode.textColor = (CSLStatsPanelConfigSettings.m_ShowLabelsInMiniMode.value) ? selectedcolor : deselectedcolor;
             showLabelsInMiniMode.eventClick += new MouseEventHandler(showLabelsInMiniMode_eventClick);
@@ -292,6 +295,12 @@ namespace CSLStatsPanel
             enableTransparency.textColor = (CSLStatsPanelConfigSettings.m_EnableTransparency.value) ? selectedcolor : deselectedcolor;
             enableTransparency.eventClick += new MouseEventHandler(enableTransparency_eventClick);
 
+            UIButton useVehicleStatsInSummaries = p.AddUIComponent<UIButton>();
+            setcommonbuttonprops(useVehicleStatsInSummaries);
+            useVehicleStatsInSummaries.text = "Vehicle Usage";
+            useVehicleStatsInSummaries.tooltip = "Use vehicle inuse/total on Summary % when it is higher than default used/capacity (excludes police)";
+            useVehicleStatsInSummaries.textColor = (CSLStatsPanelConfigSettings.m_UseVechileStatsForSummaries.value) ? selectedcolor : deselectedcolor;
+            useVehicleStatsInSummaries.eventClick += new MouseEventHandler(useVehicleStatsInSummaries_eventClick);
 
             UIButton resetConfig = p.AddUIComponent<UIButton>();
             setcommonbuttonprops(resetConfig);
@@ -309,6 +318,15 @@ namespace CSLStatsPanel
             {
                 drawstatsconfigpanel(scw[i]);
             }
+        }
+
+        void useVehicleStatsInSummaries_eventClick(UIComponent component, UIMouseEventParameter eventParam)
+        {
+            CSLStatsPanelConfigSettings.m_UseVechileStatsForSummaries.value = !CSLStatsPanelConfigSettings.m_UseVechileStatsForSummaries.value;
+            //CSLStatsPanelConfigSettings.m_ConfigChanged.value = true;
+            ((UIButton)component).textColor = (CSLStatsPanelConfigSettings.m_UseVechileStatsForSummaries.value) ? selectedcolor : deselectedcolor;
+            ((UIButton)component).focusedColor = ((UIButton)component).textColor;
+            component.parent.Focus();
         }
 
         void enableTransparency_eventClick(UIComponent component, UIMouseEventParameter eventParam)
@@ -646,7 +664,7 @@ namespace CSLStatsPanel
         public static mySavedBool m_ShowLabelsInMiniMode = new mySavedBool(m_settingsprefix + "ShowLabelsInMiniMode", true);
 
         public static mySavedBool m_MiniMode = new mySavedBool(m_settingsprefix + "EnableMiniMode", false);
-
+        public static mySavedBool m_UseVechileStatsForSummaries = new mySavedBool(m_settingsprefix + "UseVehicleStatsForSummaries", true);
         public static mySavedBool m_EnablePanelColors = new mySavedBool(m_settingsprefix + "EnablePanelColors", true);
         public static mySavedBool m_EnablePanelSummaries = new mySavedBool(m_settingsprefix + "EnablePanelSummaries", true);
         public static mySavedBool m_EnableTransparency = new mySavedBool(m_settingsprefix + "EnableTransparency", true);

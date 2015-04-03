@@ -209,7 +209,7 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
 
     }
 
-
+    
 
     public class buildingStats
     {
@@ -230,18 +230,23 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                 if (bm.m_buildings.m_buffer[i].m_flags.IsFlagSet(Building.Flags.Untouchable)) continue;
 
                 BuildingAI bi = bm.m_buildings.m_buffer[i].Info.m_buildingAI;
+                int budget = Singleton<EconomyManager>.instance.GetBudget(bi.m_info.m_class);
+                int productionRate = PlayerBuildingAI.GetProductionRate(100, budget);
                 Type t = bi.GetType();
 
                 if (t == typeof(LandfillSiteAI))                    // incinerators seem to be landfillai's as well
-                    garbagetrucks += ((LandfillSiteAI)bi).m_garbageTruckCount;
+                {
+                    garbagetrucks += (productionRate * ((LandfillSiteAI)bi).m_garbageTruckCount + 99) / 100;
+                    
+                }
                 else if (t == typeof(PoliceStationAI))
-                    policecars += ((PoliceStationAI)bi).m_policeCarCount;
+                    policecars += (productionRate * ((PoliceStationAI)bi).m_policeCarCount + 99) / 100;
                 else if (t == typeof(FireStationAI))
-                    firetrucks += ((FireStationAI)bi).m_fireTruckCount;
+                    firetrucks += (productionRate * ((FireStationAI)bi).m_fireTruckCount + 99) / 100;
                 else if (t == typeof(HospitalAI))
-                    healthcarevehicles += ((HospitalAI)bi).m_ambulanceCount;
+                    healthcarevehicles += (productionRate * ((HospitalAI)bi).m_ambulanceCount + 99) / 100;
                 else if (t == typeof(CemeteryAI))
-                    hearse += ((CemeteryAI)bi).m_hearseCount;
+                    hearse += (productionRate * ((CemeteryAI)bi).m_hearseCount + 99) / 100;
 
                 if (bm.m_buildings.m_buffer[i].m_fireIntensity > 0) onfire++;
                 buildingcount++;
@@ -257,9 +262,10 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
     public class districtStats
     {
         public double waterbuffer = 0, sewagebuffer = 0, watercapacity = 0, sewagecapacity = 0, garbage = 0;
-        public int dmcount = 0, dmusage = 0, dmproduction = 0;
+        public int dmcount = 0, dmusage = 0, dmproduction = 0, deadamount=0;
         public int finalcrimerate = 0, citizencount = 0, sickcount = 0, groundpollution = 0;
-        public int dmincome = 0;
+        public int dmincome = 0, education1rate = 0, education2rate = 0, education3rate = 0, 
+            educated0=0,educated1=0,educated2=0,educated3=0;
         public districtStats()
         {
             DistrictManager dm = Singleton<DistrictManager>.instance;
@@ -288,6 +294,15 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                 sickcount += dm.m_districts.m_buffer[i].GetSickCount();
                 finalcrimerate += (int)dm.m_districts.m_buffer[i].m_finalCrimeRate;
                 dmincome += (int)dm.m_districts.m_buffer[i].GetIncomeAccumulation();
+                //deadamount += (int)dm.m_districts.m_buffer[i].GetDeadAmount();
+                deadamount += (int)dm.m_districts.m_buffer[i].GetDeadCount();
+                education1rate = (int)dm.m_districts.m_buffer[i].GetEducation1Rate();
+                education2rate = (int)dm.m_districts.m_buffer[i].GetEducation2Rate();
+                education3rate = (int)dm.m_districts.m_buffer[i].GetEducation3Rate();
+                educated0 = (int)dm.m_districts.m_buffer[i].m_educated0Data.m_finalCount;
+                educated1 = (int)dm.m_districts.m_buffer[i].m_educated1Data.m_finalCount;
+                educated2 = (int)dm.m_districts.m_buffer[i].m_educated2Data.m_finalCount;
+                educated3 = (int)dm.m_districts.m_buffer[i].m_educated3Data.m_finalCount;
                 
             }
 
@@ -301,7 +316,8 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
             passengerbusses = 0, passengerships = 0, passengertrains = 0, passengerplanes = 0, passengermetro = 0,
             cargocars = 0, cargobusses = 0, cargoships = 0, cargotrains = 0, cargoplanes = 0, cargometro = 0,
             commercialcars = 0, commercialbusses = 0, commercialships = 0, commercialtrains = 0, commercialplanes = 0, commercialmetro = 0,
-            officecars = 0, officebusses = 0, officeships = 0, officetrains = 0, officeplanes = 0, officemetro = 0;
+            officecars = 0, officebusses = 0, officeships = 0, officetrains = 0, officeplanes = 0, officemetro = 0,
+            waitcounter=0,blockcounter=0, highestwait=0, highestblock=0, highestdelay=0, delay=0;
 
 
         public bool checkbuilding(Building b)
@@ -322,9 +338,17 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                 Vehicle myv = vm.m_vehicles.m_buffer[i];
                 if (!myv.m_flags.IsFlagSet(Vehicle.Flags.Created)) continue;
                 if (myv.m_flags.IsFlagSet(Vehicle.Flags.Deleted)) continue;
-
-                activevehicles++;
-            
+                
+                if (myv.Info.m_vehicleType == VehicleInfo.VehicleType.Car)
+                {
+                    activevehicles++;
+                    waitcounter += myv.m_waitCounter;
+                    if (myv.m_waitCounter > highestwait) highestwait = myv.m_waitCounter;
+                    blockcounter += myv.m_blockCounter;
+                    if (myv.m_blockCounter > highestblock) highestblock = myv.m_blockCounter;
+                    delay += myv.m_waitCounter + myv.m_blockCounter;
+                    if (myv.m_waitCounter + myv.m_blockCounter > highestdelay) highestdelay = myv.m_waitCounter + myv.m_blockCounter;
+                }
                 Building b = bm.m_buildings.m_buffer[myv.m_targetBuilding];
                 bool buildingisvalid = checkbuilding(b);
 
@@ -440,6 +464,30 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
 
     public static class MasterStatsWrapper
     {
+        public class AveragedStat : List<float>
+        {
+            public int m_numbertohold = 5;
+            public AveragedStat(int numbertohold = 5)
+            {
+                m_numbertohold = numbertohold;
+            }
+
+            public float AddStat(float stattoadd)
+            {
+                while (this.Count > m_numbertohold) this.RemoveAt(0);
+                this.Add(stattoadd);
+                return this.Average();
+            }
+
+            public float Value
+            {
+                get { return this.Average(); }
+            }
+        }
+
+        public static AveragedStat TrafficWaitAverage = new AveragedStat(10);
+
+
         public static void StatAdd(ref List<StatisticsClassWrapper> scwlist, StatisticsClassWrapper scwtoadd, bool onlyenabled)
         {
             if (CSLStatsPanelConfigSettings.isStatActive(scwtoadd.category, scwtoadd.m_desc) || !onlyenabled)
@@ -465,7 +513,7 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                 catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, ds.dmusage.ToString(), "Capacity", "InfoIconElectricity", true));
                 statstopull = new List<StatisticsClassWrapper>();
             }
-
+            
             cat = "Water";
             if (CSLStatsPanelConfigSettings.isCatActive(cat) || !onlyenabled)
             {
@@ -490,22 +538,39 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
             cat = "Garbage";
             if (CSLStatsPanelConfigSettings.isCatActive(cat) || !onlyenabled)
             {
-                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Production", ds.garbage, 2, "K", 1000),onlyenabled); // production
-                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Stored", StatisticType.GarbageAmount, 1000, 1, "K"),onlyenabled); ;
-                int garbageamount = (int)statstopull.Last().m_value;
-                garbageamount += (int)ds.garbage;
-                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Total", garbageamount, 2, "K", 1000),false);
-                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Storage", StatisticType.GarbageCapacity, 1000, 1, "K"),onlyenabled) ;
-                int totalcapacity = (int)statstopull.Last().m_value;
-                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Incinerators", StatisticType.IncinerationCapacity, 1000, 16, "K"),onlyenabled) ;
-                totalcapacity += (int)statstopull.Last().m_value;
-                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Capacity", totalcapacity, 2, "K", 1000),false);
+                string suffix = "K";
+                if (ds.garbage < 1000) suffix = "";
+                StatisticsClassWrapper tempscw = new StatisticsClassWrapper(cat, "Production", ds.garbage, 2, suffix, 1000);
+                StatAdd(ref statstopull, tempscw,onlyenabled); // production
+
+                tempscw = new StatisticsClassWrapper(cat, "Stored", StatisticType.GarbageAmount, 1000, 1, "K");
+                int garbageamount = (int)ds.garbage + (int)tempscw.m_value;
+                StatAdd(ref statstopull, tempscw, onlyenabled); ;
+
+
+                if (garbageamount < 1000) suffix = ""; else suffix = "K";
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Total", garbageamount, 2, suffix, 1000), false);
+
+                tempscw = new StatisticsClassWrapper(cat, "Storage", StatisticType.GarbageCapacity, 1000, 1, "K");
+                int totalcapacity = (int)tempscw.m_value;
+                StatAdd(ref statstopull, tempscw, onlyenabled);
+
+                tempscw = new StatisticsClassWrapper(cat, "Incinerators", StatisticType.IncinerationCapacity, 1000, 16, "K");
+                totalcapacity += (int)tempscw.m_value;
+                StatAdd(ref statstopull, tempscw, onlyenabled);
+
+                if (totalcapacity < 1000) suffix = ""; else suffix = "K";
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Capacity", totalcapacity, 2, suffix, 1000),false);
                 StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Piles", StatisticType.GarbagePiles, 1000, 1, "M"),onlyenabled);
 
                 StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Vehicles Used", vs.garbagetrucksinuse),onlyenabled);
                 StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Vehicles Total", bs.garbagetrucks),onlyenabled);
-
-                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Total", "Capacity", "InfoIconGarbage", true));
+                double d1 = (double)garbageamount / (double)totalcapacity;
+                double d2 = (double)vs.garbagetrucksinuse / (double)bs.garbagetrucks;
+                if ( d1 > d2
+                    || !CSLStatsPanelConfigSettings.m_UseVechileStatsForSummaries.value)
+                    catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, garbageamount.ToString(), totalcapacity.ToString(), "InfoIconGarbage", true));
+                else catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, vs.garbagetrucksinuse.ToString(), bs.garbagetrucks.ToString(), "InfoIconGarbage", true));
                 statstopull = new List<StatisticsClassWrapper>();
             }
 
@@ -520,7 +585,11 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                 StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Capacity", StatisticType.HealCapacity, 1, 1, ""),onlyenabled);
                 StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Vehicles Used", vs.healthcarevehiclesinuse),onlyenabled);
                 StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Vehicles Total", bs.healthcarevehicles),onlyenabled);
-                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, (100 - health).ToString(), "30", "InfoIconHealth"));
+                double d1 = (100 - health) / 30d;
+                double d2 = vs.healthcarevehiclesinuse / (double)bs.healthcarevehicles;
+                if (d1 > d2 || !CSLStatsPanelConfigSettings.m_UseVechileStatsForSummaries.value)
+                    catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, (100 - health).ToString(), "30", "InfoIconHealth"));
+                else catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, vs.healthcarevehiclesinuse.ToString(), bs.healthcarevehicles.ToString(), "InfoIconHealth", true));
                 statstopull = new List<StatisticsClassWrapper>();
             }
             
@@ -529,12 +598,18 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
             {
 
                 StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Amount", StatisticType.DeadAmount, 1, 1, ""),false);
-                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Capacity", StatisticType.DeadCapacity, 1, 1, ""),false);
+                double deadamount = statstopull.Last().m_value + ds.deadamount;
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Waiting", ds.deadamount), false);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Capacity", StatisticType.DeadCapacity, 1, 1, ""), false);
                 StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Cremate Capacity", StatisticType.CremateCapacity, 1000, 1, "K"),false);
                 float totaldeathcap = statstopull[statstopull.Count() - 2].m_value + statstopull[statstopull.Count - 1].m_value;
                 StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Vehicles Used", vs.hearseinuse),onlyenabled);
                 StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Vehicles Total", bs.hearse),onlyenabled);
-                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Amount", totaldeathcap.ToString(), "InfoIconHealthPressed", true));
+                double d1 = deadamount / totaldeathcap;
+                double d2 = vs.hearseinuse / (double)bs.hearse;
+                if (d1 > d2 || !CSLStatsPanelConfigSettings.m_UseVechileStatsForSummaries.value)
+                    catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, deadamount.ToString(), totaldeathcap.ToString(), "InfoIconHealthPressed", true));
+                else catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, vs.hearseinuse.ToString(), bs.hearse.ToString(), "InfoIconHealthPressed", true));
                 statstopull = new List<StatisticsClassWrapper>();
             }
 
@@ -551,10 +626,16 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
             if (CSLStatsPanelConfigSettings.isCatActive(cat) || !onlyenabled)
             {
                 StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Hazard", ImmaterialResourceManager.Resource.FireHazard, 1, 1, "%"),onlyenabled);
+                float hazard = statstopull.Last().m_value;
                 StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Buildings Burning", bs.onfire, 2, ""),onlyenabled);
                 StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Vehicles Used", vs.firetrucksinuse),onlyenabled);
                 StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Vehicles Total", bs.firetrucks),onlyenabled);
-                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Hazard", "50", "InfoIconFireSafety"));
+
+                double d1 = hazard / 50d;
+                double d2 = vs.firetrucksinuse / (double)bs.firetrucks;
+                if (d1 > d2 || !CSLStatsPanelConfigSettings.m_UseVechileStatsForSummaries.value)
+                    catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, hazard.ToString(), "50", "InfoIconFireSafety"));
+                else catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, vs.firetrucksinuse.ToString(), bs.firetrucks.ToString(), "InfoIconFireSafety", true));
                 statstopull = new List<StatisticsClassWrapper>();
             }
             //statstopull.Add(new StatisticsClassWrapper("Health Services", "Heath Care", ImmaterialResourceManager.Resource.HealthCare, 1, 1, "%"));
@@ -611,8 +692,16 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
             cat = "Education";
             if (CSLStatsPanelConfigSettings.isCatActive(cat) || !onlyenabled)
             {
-
-                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Educated", StatisticType.EducatedCount, 1, 1, ""),onlyenabled);
+                int educatedcount = ds.educated1 + ds.educated2 + ds.educated3;
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Educated", educatedcount),onlyenabled);
+                //StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Educated0", ds.educated0), onlyenabled);
+                //StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Educated1", ds.educated1), onlyenabled);
+                //StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Educated2", ds.educated2), onlyenabled);
+                //StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Educated3", ds.educated3), onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Level 1", ds.education1rate), onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Level 2", ds.education2rate), onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Level 3", ds.education3rate), onlyenabled);
+                
                 StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Students", StatisticType.StudentCount, 1, 1, ""),onlyenabled);
                 StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Max Students", StatisticType.EducationCapacity, 1, 1, ""),onlyenabled);
                 catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Students", "Max Students", "InfoIconEducation", true));
@@ -623,11 +712,17 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
             if (CSLStatsPanelConfigSettings.isCatActive(cat) || !onlyenabled)
             {
 
-                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Crime Rate", ds.finalcrimerate, 2, "%"),onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Crime Rate", ds.finalcrimerate, 2, "%"),false);
+                float crimerate = statstopull.Last().m_value;
                 StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Crimes", StatisticType.CrimeRate, 1, 1, ""),onlyenabled);
                 StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Vehicles Used", vs.policecarsinuse),onlyenabled);
                 StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Vehicles Total", bs.policecars),onlyenabled);
-                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Crime Rate", "20", "InfoIconCrime"));
+
+                double d1 = crimerate / 20d;
+                double d2 = vs.policecarsinuse / (double)bs.policecars;
+                //if (d1 > d2 || !CSLStatsPanelConfigSettings.m_UseVechileStatsForSummaries.value)
+                    catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, crimerate.ToString(), "20", "InfoIconCrime"));
+                //else catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, vs.policecarsinuse.ToString(), bs.policecars.ToString(), "InfoIconCrime", true));
                 statstopull = new List<StatisticsClassWrapper>();
             }
 
@@ -661,11 +756,22 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
             {
                 StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Noise", ImmaterialResourceManager.Resource.NoisePollution, 1, 1, "%"),onlyenabled);
                 StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Ground", ds.groundpollution, 2, "%"),onlyenabled);
+
                 catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "", "", "InfoIconPollution"));
                 statstopull = new List<StatisticsClassWrapper>();
             }
 
-
+            cat = "Traffic";
+            if (CSLStatsPanelConfigSettings.isCatActive(cat) || !onlyenabled)
+            {
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Vehicles", vs.activevehicles, 2, ""), onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Avg Delay", vs.delay / vs.activevehicles, 2, ""), onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Max Delay", vs.highestdelay, 2, ""), onlyenabled);
+                
+                double avgstat = MasterStatsWrapper.TrafficWaitAverage.AddStat((float)(vs.delay / vs.activevehicles));
+                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, avgstat.ToString(), "1", "InfoIconTrafficCongestion", true));
+                statstopull = new List<StatisticsClassWrapper>();
+            }
             cat = "System Stats";
             if (CSLStatsPanelConfigSettings.isCatActive(cat) || !onlyenabled)
             {

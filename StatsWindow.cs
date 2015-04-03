@@ -52,14 +52,12 @@ namespace CSLStatsPanel
             if (CSLStatsPanelConfigSettings.m_DisplayPanel.value) statButton_eventClick(null, null);
 
         }
-        static void createwindow()
-        {
-        }
 
         static void statButton_eventClick(UIComponent component, UIMouseEventParameter eventParam)
         {
             if (myStatsWindowPanel == null)
             {
+                MasterStatsWrapper.TrafficWaitAverage = new MasterStatsWrapper.AveragedStat(10);
                 CSLStatsPanelConfigSettings.m_DisplayPanel.value = true;
                 UIView uiView = GameObject.FindObjectOfType<UIView>();
                 if (uiView == null) return;
@@ -92,7 +90,6 @@ namespace CSLStatsPanel
             }
             finally
             {
-                
                 running = false;
             }
         }
@@ -108,7 +105,14 @@ namespace CSLStatsPanel
 
         public static void updateText()
         {
-            if (cacheddata == null) cacheddata = CSLStatsPanelConfigSettings.Categories(true);
+            if (cacheddata == null)
+            {
+                try
+                {
+                    cacheddata = CSLStatsPanelConfigSettings.Categories(true);
+                }
+                catch { return; }
+            }
             if (myStatsWindowPanel == null)
             {
                 if (doReset)
@@ -120,9 +124,15 @@ namespace CSLStatsPanel
             if (!initialized) return;
             if (running) return;
             running = true;
-            myStatsWindowPanel.updateText(cacheddata);
-            myStatsWindowPanel.Update();
-            running = false;
+            try
+            {
+                myStatsWindowPanel.updateText(cacheddata);
+                myStatsWindowPanel.Update();
+            }
+            finally
+            {
+                running = false;
+            }
         }
     }
 
@@ -692,7 +702,10 @@ namespace CSLStatsPanel
             running = true;
 
             foreach (KeyValuePair<string, CSLStatusWindowSubPanel> p in m_categories)
+            {
                 p.Value.m_stringbuilder = new List<string>();
+                p.Value.tooltip = "";
+            }
 
             for (int i = 0; i < categorydata.Count(); i++)
             {
@@ -752,7 +765,7 @@ namespace CSLStatsPanel
                     {
                         if (m_categories[currentcat].m_stringbuilder.Count() == 0)
                         {
-                            if (CSLStatsPanelConfigSettings.m_MiniMode.value 
+                            if (CSLStatsPanelConfigSettings.m_MiniMode.value
                                 && !CSLStatsPanelConfigSettings.m_ShowLabelsInMiniMode.value)
                             {
                                 if (categorydata[i].m_showstatsummary && categorydata[i].capacityUsage > -1)
@@ -785,7 +798,10 @@ namespace CSLStatsPanel
                                 }
                             }
                         }
-                        
+                        if (CSLStatsPanelConfigSettings.m_MiniMode.value)
+                        {
+                            m_categories[currentcat].tooltip += (string.IsNullOrEmpty(m_categories[currentcat].tooltip)) ? myscwlist[c].statstring : "\n" + myscwlist[c].statstring;
+                        }
                     }
                 }
             }
@@ -845,7 +861,7 @@ namespace CSLStatsPanel
                     }
                 }
                 //this.FitChildrenVertically();
-                this.FitToContents();
+                if (firstrun) this.FitToContents();
             }
             running = false;
         }
