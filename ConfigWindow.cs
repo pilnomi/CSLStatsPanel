@@ -25,8 +25,8 @@ namespace CSLStatsPanel
             this.autoLayoutStart = LayoutStart.TopLeft;
             this.autoLayout = true;
             this.autoLayoutPadding = new RectOffset(0, 0, 0, 0);
-            this.width = 1000;
-            this.height = 710;
+            this.width = 1200;
+            this.height = 740;
             this.name = "CLSStatsPanelConfigurationWindow";
 
         }
@@ -86,6 +86,7 @@ namespace CSLStatsPanel
             base.Start();
             OnSizeChanged();
             this.Update();
+            this.BringToFront();
         }
 
         /*
@@ -136,8 +137,8 @@ namespace CSLStatsPanel
 
         protected override void OnMouseDown(UIMouseEventParameter p)
         {
-
-            dragging = true;
+            if (p.buttons.IsFlagSet(UIMouseButton.Left) || p.buttons.IsFlagSet(UIMouseButton.Right))
+                dragging = true;
         }
         bool dragging = false; 
         protected override void OnMouseUp(UIMouseEventParameter p)

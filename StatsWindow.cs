@@ -504,7 +504,8 @@ namespace CSLStatsPanel
        
         protected override void OnMouseDown(UIMouseEventParameter p)
         {
-            dragging = true;
+            if (p.buttons.IsFlagSet(UIMouseButton.Left) || p.buttons.IsFlagSet(UIMouseButton.Right))
+                dragging = true;
         }
         protected override void OnMouseUp(UIMouseEventParameter p)
         {
@@ -742,9 +743,9 @@ namespace CSLStatsPanel
 
                 if (categorydata[i].capacityUsage > -1 && CSLStatsPanelConfigSettings.m_EnablePanelColors.value)
                 {
-                    if (categorydata[i].capacityUsage > .95)
+                    if (categorydata[i].capacityUsage > categorydata[i].m_targetred)
                         m_categories[currentcat].color = new Color32(255, 0, 0, 255); //red
-                    else if (categorydata[i].capacityUsage > .75)
+                    else if (categorydata[i].capacityUsage > categorydata[i].m_targetyellow)
                         m_categories[currentcat].color = new Color32(255, 255, 0, 255); //yellow
                     else m_categories[currentcat].color = new Color32(0, 255, 0, 255); //green
                 }

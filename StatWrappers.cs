@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Management;
 
 namespace CSLStatsPanel
 {
@@ -21,6 +22,7 @@ namespace CSLStatsPanel
         public string m_sprite = "GenericPanel";
         private int m_resourceusedindex = -1, m_resourcecapacityindex = -1;
         public bool m_showstatsummary = false;
+        public float m_targetred = .95f, m_targetyellow = .75f;
 
         public StatisticsCategoryWrapper(string category, List<StatisticsClassWrapper> scwlist,
             string resourceusedfield, string resourcecapacityfield, string sprite = "GenericPanel", bool showstatsummary = false)
@@ -214,7 +216,8 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
     public class buildingStats
     {
         public int onfire = 0, buildingcount = 0,
-            garbagetrucks = 0, firetrucks = 0, hearse = 0, policecars = 0, healthcarevehicles = 0;
+            garbagetrucks = 0, firetrucks = 0, hearse = 0, policecars = 0, healthcarevehicles = 0,
+            workplacecount0, workplacecount1, workplacecount2, workplacecount3;
         public buildingStats()
         {
             BuildingManager bm = Singleton<BuildingManager>.instance;
@@ -229,15 +232,22 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                 if (bm.m_buildings.m_buffer[i].m_flags.IsFlagSet(Building.Flags.Deleted)) continue;
                 if (bm.m_buildings.m_buffer[i].m_flags.IsFlagSet(Building.Flags.Untouchable)) continue;
 
+                buildingcount++;
+
+                bool isEmptying = false, isFull = false;
+                if (bm.m_buildings.m_buffer[i].m_flags.IsFlagSet(Building.Flags.Downgrading)) isEmptying = true;
+                if (bm.m_buildings.m_buffer[i].m_flags.IsFlagSet(Building.Flags.CapacityFull)) isFull = true;
+
                 BuildingAI bi = bm.m_buildings.m_buffer[i].Info.m_buildingAI;
                 int budget = Singleton<EconomyManager>.instance.GetBudget(bi.m_info.m_class);
                 int productionRate = PlayerBuildingAI.GetProductionRate(100, budget);
                 Type t = bi.GetType();
 
+                
                 if (t == typeof(LandfillSiteAI))                    // incinerators seem to be landfillai's as well
                 {
-                    garbagetrucks += (productionRate * ((LandfillSiteAI)bi).m_garbageTruckCount + 99) / 100;
                     
+                    if (!isEmptying && !isFull) garbagetrucks += (productionRate * ((LandfillSiteAI)bi).m_garbageTruckCount + 99) / 100;
                 }
                 else if (t == typeof(PoliceStationAI))
                     policecars += (productionRate * ((PoliceStationAI)bi).m_policeCarCount + 99) / 100;
@@ -246,10 +256,9 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                 else if (t == typeof(HospitalAI))
                     healthcarevehicles += (productionRate * ((HospitalAI)bi).m_ambulanceCount + 99) / 100;
                 else if (t == typeof(CemeteryAI))
-                    hearse += (productionRate * ((CemeteryAI)bi).m_hearseCount + 99) / 100;
+                    if (!isEmptying && !isFull) hearse += (productionRate * ((CemeteryAI)bi).m_hearseCount + 99) / 100;
 
                 if (bm.m_buildings.m_buffer[i].m_fireIntensity > 0) onfire++;
-                buildingcount++;
             }
 
 
@@ -266,6 +275,8 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
         public int finalcrimerate = 0, citizencount = 0, sickcount = 0, groundpollution = 0;
         public int dmincome = 0, education1rate = 0, education2rate = 0, education3rate = 0, 
             educated0=0,educated1=0,educated2=0,educated3=0;
+        public List<DistrictEducationData> educationData = new List<DistrictEducationData>();
+
         public districtStats()
         {
             DistrictManager dm = Singleton<DistrictManager>.instance;
@@ -303,7 +314,10 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                 educated1 = (int)dm.m_districts.m_buffer[i].m_educated1Data.m_finalCount;
                 educated2 = (int)dm.m_districts.m_buffer[i].m_educated2Data.m_finalCount;
                 educated3 = (int)dm.m_districts.m_buffer[i].m_educated3Data.m_finalCount;
-                
+                educationData.Add(dm.m_districts.m_buffer[i].m_educated0Data);
+                educationData.Add(dm.m_districts.m_buffer[i].m_educated1Data);
+                educationData.Add(dm.m_districts.m_buffer[i].m_educated2Data);
+                educationData.Add(dm.m_districts.m_buffer[i].m_educated3Data);
             }
 
         }
@@ -324,7 +338,9 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
         {
             return b.m_flags.IsFlagSet(Building.Flags.Created)
                 && !b.m_flags.IsFlagSet(Building.Flags.Deleted)
-                && !b.m_flags.IsFlagSet(Building.Flags.Untouchable);
+                && !b.m_flags.IsFlagSet(Building.Flags.Untouchable)
+                && !b.m_flags.IsFlagSet(Building.Flags.CapacityFull)
+                && !b.m_flags.IsFlagSet(Building.Flags.Downgrading); // is emptying
         }
 
         public vehiclestats()
@@ -355,7 +371,7 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                 switch (myv.Info.m_class.m_service)
                 {
                     case ItemClass.Service.Garbage:
-                        garbagetrucksinuse++;
+                        if (buildingisvalid) garbagetrucksinuse++;
                         break;
                     case ItemClass.Service.FireDepartment:
                         firetrucksinuse++;
@@ -367,7 +383,7 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                         if (myv.Info.m_vehicleAI.GetType() == typeof(AmbulanceAI))
                             healthcarevehiclesinuse++;
                         else if (myv.Info.m_vehicleAI.GetType() == typeof(HearseAI))
-                            hearseinuse++;
+                            if (buildingisvalid) hearseinuse++;
                         break;
                     case ItemClass.Service.PublicTransport:
                         switch (myv.Info.m_class.m_subService)
@@ -678,34 +694,71 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
             cat = "Citizens";
             if (CSLStatsPanelConfigSettings.isCatActive(cat) || !onlyenabled)
             {
-
+                
                 StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Count", ds.citizencount, 2, ""),onlyenabled);
                 StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Move Rate", StatisticType.MoveRate, 1, 1, ""), onlyenabled);
                 StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Birth Rate", StatisticType.BirthRate, 1, 1, ""), onlyenabled);
                 StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Death Rate", StatisticType.DeathRate, 1, 1, ""), onlyenabled);
-                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Eligible Workers", StatisticType.EligibleWorkers, 1, 1, ""), onlyenabled);
-                statstopull.Add(new StatisticsClassWrapper(cat, "Unemployed", StatisticType.Unemployed, 1, 1, ""));
+
+                uint homeless = ds.educationData[0].m_finalHomeless
+                    + ds.educationData[1].m_finalHomeless
+                    + ds.educationData[2].m_finalHomeless
+                    + ds.educationData[3].m_finalHomeless;
+
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Homeless", homeless), onlyenabled);
+
                 catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Death Rate", "Birth Rate", "InfoIconPopulation"));
                 statstopull = new List<StatisticsClassWrapper>();
             }
+
+            float eligibleworkers = ds.educationData[0].m_finalEligibleWorkers
+                    + ds.educationData[1].m_finalEligibleWorkers
+                    + ds.educationData[2].m_finalEligibleWorkers
+                    + ds.educationData[3].m_finalEligibleWorkers;
 
             cat = "Education";
             if (CSLStatsPanelConfigSettings.isCatActive(cat) || !onlyenabled)
             {
                 int educatedcount = ds.educated1 + ds.educated2 + ds.educated3;
                 StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Educated", educatedcount),onlyenabled);
-                //StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Educated0", ds.educated0), onlyenabled);
-                //StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Educated1", ds.educated1), onlyenabled);
-                //StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Educated2", ds.educated2), onlyenabled);
-                //StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Educated3", ds.educated3), onlyenabled);
-                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Level 1", ds.education1rate), onlyenabled);
-                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Level 2", ds.education2rate), onlyenabled);
-                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Level 3", ds.education3rate), onlyenabled);
+
+                for (int i = 0; i < 4; i++)
+                {
+                    StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Level " + i.ToString(), ds.educated0), onlyenabled);
+                    statstopull.Last().statstring = 
+                        (ds.educationData[i].m_finalEligibleWorkers == 0) ? string.Format("L{0}: 0.00% - 0", i) :
+                        string.Format("L{2}: {0:0.00%} - {1}",
+                        ds.educationData[i].m_finalCount / (double)ds.citizencount,
+                        ds.educationData[i].m_finalCount,
+                        i);
+                }
                 
                 StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Students", StatisticType.StudentCount, 1, 1, ""),onlyenabled);
                 StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Max Students", StatisticType.EducationCapacity, 1, 1, ""),onlyenabled);
                 catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Students", "Max Students", "InfoIconEducation", true));
                 statstopull = new List<StatisticsClassWrapper>();
+            }
+
+            cat = "Unemployment";
+            if (CSLStatsPanelConfigSettings.isCatActive(cat) || !onlyenabled)
+            {
+                statstopull.Add(new StatisticsClassWrapper(cat, "Unemployed", StatisticType.Unemployed, 1, 1, ""));
+                for (int i = 0; i < 4; i++)
+                {
+                    StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Level " + i.ToString(), ds.educated0), onlyenabled);
+                    statstopull.Last().statstring = 
+                        (ds.educationData[i].m_finalEligibleWorkers == 0) ? string.Format("L{0}: 0.00% - 0", i) : string.Format("L{2}: {1:0.00%} - {0}",
+                        ds.educationData[i].m_finalUnemployed,
+                        ds.educationData[i].m_finalUnemployed / (double)ds.educationData[i].m_finalEligibleWorkers,
+                        i);
+                }
+
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Eligible Workers", StatisticType.EligibleWorkers, 1, 1, ""), onlyenabled);
+                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Unemployed", eligibleworkers.ToString(), "InfoIconOutsideConnections", true));
+                catstopull.Last().m_targetred = .25f;
+                catstopull.Last().m_targetyellow = .15f;
+                statstopull = new List<StatisticsClassWrapper>();
+
             }
 
             cat = "Crime";
@@ -776,14 +829,20 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
             if (CSLStatsPanelConfigSettings.isCatActive(cat) || !onlyenabled)
             {
                 StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "FPS", ThreadingCSLStatsMod.framespersecond),onlyenabled);
-                //statstopull.Add(new StatisticsClassWrapper(cat, "CPU", ThreadingCSLStatsMod.cpuCounter.NextValue(), 2, "%"));
-                //statstopull.Add(new StatisticsClassWrapper(cat, "RAM", ThreadingCSLStatsMod.ramCounter.NextValue(), 2, "%"));
+                //StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "CPU", UnityEngine.SystemInfo.systemMemorySize, 2, "%"), onlyenabled);
+                //StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Cities", systemstats.GetCitiesValue(), 2, "%"), onlyenabled);
+                //StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Unity Alloc RAM", UnityEngine.Profiler.GetTotalAllocatedMemory() / 1024 / 1024, 2, "MB"), onlyenabled);
+                //StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Unity Res RAM", UnityEngine.Profiler.GetTotalReservedMemory() / 1024 / 1024, 2, "MB"), onlyenabled);
+                //StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Unity Free RAM", UnityEngine.Profiler.GetTotalUnusedReservedMemory() / 1024 / 1024, 2, "MB"), onlyenabled);
+                //StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "SYS RAM", UnityEngine.SystemInfo.systemMemorySize, 2, "MB"), onlyenabled);
+                //StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "GPU RAM", UnityEngine.SystemInfo.graphicsMemorySize, 2, "MB"), onlyenabled);
+                
+                //StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "RAM", ramCounter.NextValue(), 2, "%"), onlyenabled);
                 catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "", "", "ToolbarIconHelp"));
                 statstopull = new List<StatisticsClassWrapper>();
             }
             return catstopull;
         }
-
 
 
         private static IncomeExpensesPoll[] basicExpensesPolls;

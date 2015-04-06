@@ -122,6 +122,10 @@ namespace CSLStatsPanel
             {
                 StatusWindowInterface.cacheddata = CSLStatsPanelConfigSettings.Categories(true);
             }
+            catch(Exception ex)
+            {
+                statlog.log(ex.Message);
+            }
             finally
             {
                 int myrefreshrate = CSLStatsPanelConfigSettings.PanelRefreshRate;
@@ -173,7 +177,9 @@ namespace CSLStatsPanel
             public static void log(string logtext)
             {
                 if (!enablelogging) return;
-                UnityEngine.Debug.Log(logtext);
+                //UnityEngine.Debug.Log(logtext);
+                
+                DebugOutputPanel.AddMessage(ColossalFramework.Plugins.PluginManager.MessageType.Message, logtext);
             }
         }
 
