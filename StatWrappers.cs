@@ -230,13 +230,15 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
             {
                 if (!bm.m_buildings.m_buffer[i].m_flags.IsFlagSet(Building.Flags.Created)) continue;
                 if (bm.m_buildings.m_buffer[i].m_flags.IsFlagSet(Building.Flags.Deleted)) continue;
-                if (bm.m_buildings.m_buffer[i].m_flags.IsFlagSet(Building.Flags.Untouchable)) continue;
+                //if (bm.m_buildings.m_buffer[i].m_flags.IsFlagSet(Building.Flags.Untouchable)) continue;
 
                 buildingcount++;
 
                 bool isEmptying = false, isFull = false;
-                if (bm.m_buildings.m_buffer[i].m_flags.IsFlagSet(Building.Flags.Downgrading)) isEmptying = true;
-                if (bm.m_buildings.m_buffer[i].m_flags.IsFlagSet(Building.Flags.CapacityFull)) isFull = true;
+                //if (bm.m_buildings.m_buffer[i].m_flags.IsFlagSet(Building.Flags.Downgrading)) isEmptying = true;
+                if ((bm.m_buildings.m_buffer[i].m_flags & Building.Flags.Downgrading) != Building.Flags.None) isEmptying = true;
+                if (bm.m_buildings.m_buffer[i].Info.m_buildingAI.IsFull((ushort)i, ref bm.m_buildings.m_buffer[i])) isFull = true;
+                
 
                 BuildingAI bi = bm.m_buildings.m_buffer[i].Info.m_buildingAI;
                 int budget = Singleton<EconomyManager>.instance.GetBudget(bi.m_info.m_class);
@@ -334,13 +336,18 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
             waitcounter=0,blockcounter=0, highestwait=0, highestblock=0, highestdelay=0, delay=0;
 
 
-        public bool checkbuilding(Building b)
+        public bool checkbuilding(Building b, ushort buildingIndex)
         {
+            bool isEmptying = false;
+            if ((b.m_flags & Building.Flags.Downgrading) != Building.Flags.None) isEmptying = true;
+
             return b.m_flags.IsFlagSet(Building.Flags.Created)
                 && !b.m_flags.IsFlagSet(Building.Flags.Deleted)
                 && !b.m_flags.IsFlagSet(Building.Flags.Untouchable)
-                && !b.m_flags.IsFlagSet(Building.Flags.CapacityFull)
-                && !b.m_flags.IsFlagSet(Building.Flags.Downgrading); // is emptying
+                && !b.Info.m_buildingAI.IsFull(buildingIndex, ref b) // is full
+                && !isEmptying; // is emptying
+
+
         }
 
         public vehiclestats()
@@ -365,8 +372,8 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                     delay += myv.m_waitCounter + myv.m_blockCounter;
                     if (myv.m_waitCounter + myv.m_blockCounter > highestdelay) highestdelay = myv.m_waitCounter + myv.m_blockCounter;
                 }
-                Building b = bm.m_buildings.m_buffer[myv.m_targetBuilding];
-                bool buildingisvalid = checkbuilding(b);
+                Building b = bm.m_buildings.m_buffer[myv.m_sourceBuilding];
+                bool buildingisvalid = checkbuilding(b, myv.m_sourceBuilding);
 
                 switch (myv.Info.m_class.m_service)
                 {
@@ -384,6 +391,7 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                             healthcarevehiclesinuse++;
                         else if (myv.Info.m_vehicleAI.GetType() == typeof(HearseAI))
                             if (buildingisvalid) hearseinuse++;
+                        
                         break;
                     case ItemClass.Service.PublicTransport:
                         switch (myv.Info.m_class.m_subService)

@@ -45,6 +45,7 @@ namespace CSLStatsPanel
             StatusWindowInterface.destroy();
             if (ThreadingCSLStatsMod.instance != null)
             {
+                ThreadingCSLStatsMod.instance.refreshtimer.Stop();
                 ThreadingCSLStatsMod.instance.m_initialized = false;
                 statlog.log("reset ThreadingCSLStatsMod");
             }
@@ -52,12 +53,14 @@ namespace CSLStatsPanel
 
         public override void OnLevelUnloading()
         {
+            if (ThreadingCSLStatsMod.instance != null) ThreadingCSLStatsMod.instance.refreshtimer.Stop();
             StatusWindowInterface.destroy();
             base.OnLevelUnloading();
         }
 
         public override void OnReleased()
         {
+            if (ThreadingCSLStatsMod.instance != null) ThreadingCSLStatsMod.instance.refreshtimer.Stop();
             StatusWindowInterface.destroy();
             base.OnReleased();
         }
@@ -108,7 +111,6 @@ namespace CSLStatsPanel
 
         public void settimer()
         {
-            
             refreshtimer = new System.Timers.Timer(1000);
             refreshtimer.Elapsed += new System.Timers.ElapsedEventHandler(refreshtimer_Elapsed);
             refreshtimer.Enabled = true;
