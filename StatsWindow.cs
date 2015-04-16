@@ -778,7 +778,7 @@ namespace CSLStatsPanel
                                 else if (myscwlist.Count() > 0)
                                 {
                                     m_categories[currentcat].m_stringbuilder.Add(
-                                        Math.Round(myscwlist[0].m_value, 0) + myscwlist[0].m_scaledesc);
+                                        Math.Round(myscwlist[0].m_finalvalue, 0) + myscwlist[0].m_scaledesc);
 
                                 }
 
@@ -794,7 +794,7 @@ namespace CSLStatsPanel
                                 else if (myscwlist.Count() > 0)
                                 {
                                     m_categories[currentcat].m_stringbuilder.Add(currentcat
-                                        + " - " + Math.Round(myscwlist[0].m_value, 0) + myscwlist[0].m_scaledesc);
+                                        + " - " + Math.Round(myscwlist[0].m_finalvalue, 0) + myscwlist[0].m_scaledesc);
 
                                 }
                             }

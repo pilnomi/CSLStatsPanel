@@ -186,7 +186,7 @@ namespace CSLStatsPanel
 
     }
 
-    class ConfigSettingsWindow : UIPanel
+    class ConfigSettingsWindow : UIScrollablePanel
     {
         UITextField refreshInterval;
         public List<UIPanel> catpanels = new List<UIPanel>();
@@ -200,15 +200,22 @@ namespace CSLStatsPanel
             this.autoLayoutPadding = new RectOffset(5, 5, 5,5);
             this.autoLayout = true;
             this.clipChildren = true;
-
-
+            this.scrollWheelAmount = 5;
+            
 
             drawstatsconfig();
+
             //this.FitChildrenVertically();
             //this.FitChildrenHorizontally();
             //this.FitToContents();
         }
- 
+
+        protected override void OnMouseWheel(UIMouseEventParameter p)
+        {
+            this.scrollPosition = new Vector2(this.scrollPosition.x, this.scrollPosition.y + (-1 * p.wheelDelta * 10));
+            base.OnMouseWheel(p);
+        }
+
         void refreshInterval_eventLeaveFocus(UIComponent component, UIFocusEventParameter eventParam)
         {
             int t = 1;
@@ -224,7 +231,7 @@ namespace CSLStatsPanel
         void drawstatsconfig()
         {
 
-
+            
             UIScrollablePanel p = this.AddUIComponent<UIScrollablePanel>();
             //p.width = this.width;
             //p.height = 40;
@@ -363,8 +370,9 @@ namespace CSLStatsPanel
         private void setcommonbuttonprops(UIButton b)
         {
             b.normalFgSprite = "ButtonMenu";
-            b.width = 125;
-            b.height = 20;
+            b.width = 100;
+            b.height = 15;
+            b.textScale += -.15f;
             b.normalBgSprite = "ButtonMenu";
             b.hoveredBgSprite = "ButtonMenuHovered";
             b.focusedBgSprite = "ButtonMenuFocused";

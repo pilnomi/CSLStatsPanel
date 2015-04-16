@@ -109,7 +109,7 @@ namespace CSLStatsPanel
         public string m_scaledesc = "";
         public string statstring;
         public string category;
-        public float m_value;
+        public float m_value, m_finalvalue;
 
         public StatisticsClassWrapper(string category, string description, StatisticType st, decimal scale, decimal multiplier, string scaledescription, int precision = 2)
         {
@@ -138,8 +138,9 @@ namespace CSLStatsPanel
             this.category = category;
             statstring = description;
         }
-        public StatisticsClassWrapper(string category, string description, double value, int precision = 2, string suffix = "", decimal scale = 1)
+        public StatisticsClassWrapper(string category, string description, double value, int precision = 2, string suffix = "", decimal scale = 1, bool alwaysaddsuffix = true)
         {
+            bool showsuffix = alwaysaddsuffix;
             this.category = category;
             m_desc = description;
             m_value = (float)value;
@@ -147,8 +148,10 @@ namespace CSLStatsPanel
             {
                 value /= (float)scale;
                 m_scaledesc = suffix;
+                showsuffix = true;
             }
-            statstring = description + ": " + Math.Round(value, precision).ToString() + suffix;
+            m_finalvalue = (float)value;
+            statstring = description + ": " + Math.Round(value, precision).ToString() + ((showsuffix) ? suffix : "");
 
         }
 
@@ -171,6 +174,7 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                     strtotal = Math.Round(total, precision).ToString() + scalestring;
                 }
 
+                m_finalvalue = (float)total;
                 return desc + ": " + strtotal + " ";
             }
             catch
@@ -198,6 +202,8 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                         strtotal = Math.Round(total, precision).ToString() + scalestring;
 
                     }
+                    m_finalvalue = (float)total;
+
                     return desc + ": " + strtotal + " ";
                 }
                 else return desc + ": N/A";
@@ -333,7 +339,13 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
             cargocars = 0, cargobusses = 0, cargoships = 0, cargotrains = 0, cargoplanes = 0, cargometro = 0,
             commercialcars = 0, commercialbusses = 0, commercialships = 0, commercialtrains = 0, commercialplanes = 0, commercialmetro = 0,
             officecars = 0, officebusses = 0, officeships = 0, officetrains = 0, officeplanes = 0, officemetro = 0,
-            waitcounter=0,blockcounter=0, highestwait=0, highestblock=0, highestdelay=0, delay=0;
+            waitcounter=0,blockcounter=0, highestwait=0, highestblock=0, highestdelay=0, delay=0, bodiesintransit=0,
+            cargoexports =0, cargoimports=0,
+            carexports = 0, carimports = 0, trainexports = 0, trainimports = 0,
+            metroexports = 0, metroimports = 0, shipexports = 0, shipimports = 0,
+            planeexports = 0, planeimports = 0, 
+            industryimports=0, industryexports=0, commercialimports=0, commercialexports=0, officeimports=0, officeexports=0,
+            intracitytransports=0;
 
 
         public bool checkbuilding(Building b, ushort buildingIndex)
@@ -374,6 +386,10 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                 }
                 Building b = bm.m_buildings.m_buffer[myv.m_sourceBuilding];
                 bool buildingisvalid = checkbuilding(b, myv.m_sourceBuilding);
+                bool sourcebuildingisplayer = (bm.m_buildings.m_buffer[myv.m_sourceBuilding].m_flags.IsFlagSet(Building.Flags.Untouchable)) ? false : true;
+                bool targetbuildingisplayer = (bm.m_buildings.m_buffer[myv.m_targetBuilding].m_flags.IsFlagSet(Building.Flags.Untouchable)) ? false : true;
+                uint transfersize = myv.m_transferSize;
+                TransferManager.TransferReason transfertype = (TransferManager.TransferReason)myv.m_transferType;
 
                 switch (myv.Info.m_class.m_service)
                 {
@@ -390,90 +406,155 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                         if (myv.Info.m_vehicleAI.GetType() == typeof(AmbulanceAI))
                             healthcarevehiclesinuse++;
                         else if (myv.Info.m_vehicleAI.GetType() == typeof(HearseAI))
-                            if (buildingisvalid) hearseinuse++;
+                            if (buildingisvalid)
+                            {
+                                hearseinuse++;
+                                bodiesintransit += transfersize;
+                            }
                         
                         break;
                     case ItemClass.Service.PublicTransport:
+                        if (sourcebuildingisplayer && !targetbuildingisplayer) cargoexports += transfersize;
+                        if (targetbuildingisplayer && !sourcebuildingisplayer) cargoimports += transfersize;
+                        if (targetbuildingisplayer && sourcebuildingisplayer) intracitytransports += transfersize;
+
                         switch (myv.Info.m_class.m_subService)
                         {
-
                             case ItemClass.SubService.PublicTransportPlane:
                                 if (buildingisvalid) 
                                     passengerplanes++;
+                                if (sourcebuildingisplayer && !targetbuildingisplayer) planeexports += transfersize;
+                                if (targetbuildingisplayer && !sourcebuildingisplayer) planeimports += transfersize;
                                 break;
                             case ItemClass.SubService.PublicTransportTrain:
                                 if (buildingisvalid)
                                     passengertrains++;
+                                if (sourcebuildingisplayer && !targetbuildingisplayer) trainexports += transfersize;
+                                if (targetbuildingisplayer && !sourcebuildingisplayer) trainimports += transfersize;
                                 break;
                             case ItemClass.SubService.PublicTransportShip:
                                 if (buildingisvalid)
                                     passengerships++;
+                                if (sourcebuildingisplayer && !targetbuildingisplayer) shipexports += transfersize;
+                                if (targetbuildingisplayer && !sourcebuildingisplayer) shipimports += transfersize;
                                 break;
                             case ItemClass.SubService.PublicTransportBus:
                                 passengerbusses++;
                                 break;
                             case ItemClass.SubService.PublicTransportMetro:
                                 passengermetro++;
+                                if (sourcebuildingisplayer && !targetbuildingisplayer) metroexports += transfersize;
+                                if (targetbuildingisplayer && !sourcebuildingisplayer) metroimports += transfersize;
                                 break;
                         }
                         break;
-                    case ItemClass.Service.Industrial:
-                        switch (myv.Info.m_vehicleType)
-                        {
-                            case VehicleInfo.VehicleType.Car:
-                                cargocars++;
-                                break;
-                            case VehicleInfo.VehicleType.Metro:
-                                cargometro++;
-                                break;
-                            case VehicleInfo.VehicleType.Plane:
-                                cargoplanes++;
-                                break;
-                            case VehicleInfo.VehicleType.Ship:
-                                cargoships++;
-                                break;
-                            case VehicleInfo.VehicleType.Train:
-                                cargotrains++;
-                                break;
-                        }
-                        break;
-                    case ItemClass.Service.Commercial:
+                     case ItemClass.Service.Commercial:
+                        if (sourcebuildingisplayer && !targetbuildingisplayer) cargoexports += transfersize;
+                        if (targetbuildingisplayer && !sourcebuildingisplayer) cargoimports += transfersize;
+                        if (sourcebuildingisplayer && !targetbuildingisplayer) commercialexports += transfersize;
+                        if (targetbuildingisplayer && !sourcebuildingisplayer) commercialimports += transfersize;
+                        if (targetbuildingisplayer && sourcebuildingisplayer) intracitytransports += transfersize;
+
                         switch (myv.Info.m_vehicleType)
                         {
                             case VehicleInfo.VehicleType.Car:
                                 commercialcars++;
+                                if (sourcebuildingisplayer && !targetbuildingisplayer) carexports += transfersize;
+                                if (targetbuildingisplayer && !sourcebuildingisplayer) carimports += transfersize;
+
                                 break;
                             case VehicleInfo.VehicleType.Metro:
                                 commercialmetro++;
+                                if (sourcebuildingisplayer && !targetbuildingisplayer) metroexports += transfersize;
+                                if (targetbuildingisplayer && !sourcebuildingisplayer) metroimports += transfersize;
                                 break;
                             case VehicleInfo.VehicleType.Plane:
+                                if (sourcebuildingisplayer && !targetbuildingisplayer) planeexports += transfersize;
+                                if (targetbuildingisplayer && !sourcebuildingisplayer) planeimports += transfersize;
                                 commercialplanes++;
                                 break;
                             case VehicleInfo.VehicleType.Ship:
+                                if (sourcebuildingisplayer && !targetbuildingisplayer) shipexports += transfersize;
+                                if (targetbuildingisplayer && !sourcebuildingisplayer) shipimports += transfersize;
                                 commercialships++;
                                 break;
                             case VehicleInfo.VehicleType.Train:
+                                
                                 commercialtrains++;
+                                if (sourcebuildingisplayer && !targetbuildingisplayer) trainexports += transfersize;
+                                if (targetbuildingisplayer && !sourcebuildingisplayer) trainimports += transfersize;
                                 break;
                         }
                         break;
                     case ItemClass.Service.Office:
+                        if (sourcebuildingisplayer && !targetbuildingisplayer) cargoexports += transfersize;
+                        if (targetbuildingisplayer && !sourcebuildingisplayer) cargoimports += transfersize;
+                        if (sourcebuildingisplayer && !targetbuildingisplayer) officeexports += transfersize;
+                        if (targetbuildingisplayer && !sourcebuildingisplayer) officeimports += transfersize;
+                        if (targetbuildingisplayer && sourcebuildingisplayer) intracitytransports += transfersize;
                         switch (myv.Info.m_vehicleType)
                         {
                             case VehicleInfo.VehicleType.Car:
+                                if (sourcebuildingisplayer && !targetbuildingisplayer) carexports += transfersize;
+                                if (targetbuildingisplayer && !sourcebuildingisplayer) carimports += transfersize;
                                 officecars++;
                                 break;
                             case VehicleInfo.VehicleType.Metro:
                                 officemetro++;
+                                if (sourcebuildingisplayer && !targetbuildingisplayer) metroexports += transfersize;
+                                if (targetbuildingisplayer && !sourcebuildingisplayer) metroimports += transfersize;
                                 break;
                             case VehicleInfo.VehicleType.Plane:
                                 officeplanes++;
+                                if (sourcebuildingisplayer && !targetbuildingisplayer) planeexports += transfersize;
+                                if (targetbuildingisplayer && !sourcebuildingisplayer) planeimports += transfersize;
                                 break;
                             case VehicleInfo.VehicleType.Ship:
                                 officeships++;
+                                if (sourcebuildingisplayer && !targetbuildingisplayer) shipexports += transfersize;
+                                if (targetbuildingisplayer && !sourcebuildingisplayer) shipimports += transfersize;
                                 break;
                             case VehicleInfo.VehicleType.Train:
                                 officetrains++;
+                                if (sourcebuildingisplayer && !targetbuildingisplayer) trainexports += transfersize;
+                                if (targetbuildingisplayer && !sourcebuildingisplayer) trainimports += transfersize;
+                                break;
+                        }
+                        break;
+                    case ItemClass.Service.Industrial:
+                        if (sourcebuildingisplayer && !targetbuildingisplayer) cargoexports += transfersize;
+                        if (targetbuildingisplayer && !sourcebuildingisplayer) cargoimports += transfersize;
+                        if (sourcebuildingisplayer && !targetbuildingisplayer) industryexports += transfersize;
+                        if (targetbuildingisplayer && !sourcebuildingisplayer) industryimports += transfersize;
+                        if (targetbuildingisplayer && sourcebuildingisplayer) intracitytransports += transfersize;
+                        switch (myv.Info.m_vehicleType)
+                        {
+                            case VehicleInfo.VehicleType.Car:
+                                cargocars++;
+                                if (sourcebuildingisplayer && !targetbuildingisplayer) carexports += transfersize;
+                                if (targetbuildingisplayer && !sourcebuildingisplayer) carimports += transfersize;
+
+                                break;
+                            case VehicleInfo.VehicleType.Metro:
+                                cargometro++;
+                                if (sourcebuildingisplayer && !targetbuildingisplayer) metroexports += transfersize;
+                                if (targetbuildingisplayer && !sourcebuildingisplayer) metroimports += transfersize;
+                                break;
+                            case VehicleInfo.VehicleType.Plane:
+                                cargoplanes++;
+                                if (sourcebuildingisplayer && !targetbuildingisplayer) planeexports += transfersize;
+                                if (targetbuildingisplayer && !sourcebuildingisplayer) planeimports += transfersize;
+
+                                break;
+                            case VehicleInfo.VehicleType.Ship:
+                                cargoships++;
+                                if (sourcebuildingisplayer && !targetbuildingisplayer) shipexports += transfersize;
+                                if (targetbuildingisplayer && !sourcebuildingisplayer) shipimports += transfersize;
+                                break;
+                            case VehicleInfo.VehicleType.Train:
+                                if (sourcebuildingisplayer && !targetbuildingisplayer) trainexports += transfersize;
+                                if (targetbuildingisplayer && !sourcebuildingisplayer) trainimports += transfersize;
+                                cargotrains++;
                                 break;
                         }
                         break;
@@ -624,6 +705,7 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                 StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Amount", StatisticType.DeadAmount, 1, 1, ""),false);
                 double deadamount = statstopull.Last().m_value + ds.deadamount;
                 StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Waiting", ds.deadamount), false);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "In Transit", vs.bodiesintransit), false);
                 StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Capacity", StatisticType.DeadCapacity, 1, 1, ""), false);
                 StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Cremate Capacity", StatisticType.CremateCapacity, 1000, 1, "K"),false);
                 float totaldeathcap = statstopull[statstopull.Count() - 2].m_value + statstopull[statstopull.Count - 1].m_value;
@@ -690,12 +772,40 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                 StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Entertainment", ImmaterialResourceManager.Resource.Entertainment, 1, 1, ""), onlyenabled);
                 StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Attractiveness", ImmaterialResourceManager.Resource.Attractiveness, 1, 1, ""), onlyenabled);
                 StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Cargo Transport", ImmaterialResourceManager.Resource.CargoTransport, 1, 1, ""), onlyenabled);
+                //StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Imports", vs.cargoimports, 2, "K", 1000, false), onlyenabled);
+                //StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Exports", vs.cargoexports, 2, "K", 1000, false), onlyenabled);
                 //statstopull.Add(new StatisticsClassWrapper("Misc", "Coverage?", ImmaterialResourceManager.Resource.Coverage, 1, 1, ""));
                 StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Density", ImmaterialResourceManager.Resource.Density, 1, 1, ""), onlyenabled);
                 StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Land Value", ImmaterialResourceManager.Resource.LandValue, 1, 1, "₡/m²"), onlyenabled);
                 StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "ImmaterialResource", StatisticType.ImmaterialResource, 1000, 1, "M"), onlyenabled);
                 StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Goods Produced", StatisticType.GoodsProduced, 1000, 1, "K"), onlyenabled);
                 catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, servicesexpenses.ToString(), servicesincome.ToString(), "InfoIconLandValue"));
+                statstopull = new List<StatisticsClassWrapper>();
+            }
+
+            cat = "Trade";
+            if (CSLStatsPanelConfigSettings.isCatActive(cat) || !onlyenabled)
+            {
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Imports", vs.cargoimports, 2, "K", 1000, false), onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Exports", vs.cargoexports, 2, "K", 1000, false), onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Intracity", vs.intracitytransports, 2, "K", 1000, false), onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Imports Car", vs.carimports, 2, "K", 1000, false), onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Exports Car", vs.carexports, 2, "K", 1000, false), onlyenabled);
+                //StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Imports Metro", vs.metroimports, 2, "K", 1000), onlyenabled);
+                //StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Exports Metro", vs.metroexports, 2, "K", 1000), onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Imports Train", vs.trainimports, 2, "K", 1000, false), onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Exports Train", vs.trainexports, 2, "K", 1000, false), onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Imports Ship", vs.shipimports, 2, "K", 1000, false), onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Exports Ship", vs.shipexports, 2, "K", 1000, false), onlyenabled);
+                //StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Imports Plane", vs.planeimports, 2, "K", 1000), onlyenabled);
+                //StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Exports Plane", vs.planeexports, 2, "K", 1000), onlyenabled);
+                //StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Ind Imports", vs.industryimports, 2, "K", 1000, false), onlyenabled);
+                //StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Ind Exports", vs.industryexports, 2, "K", 1000, false), onlyenabled);
+                //StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Com Imports", vs.commercialimports, 2, "K", 1000, false), onlyenabled);
+                //StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Com Exports", vs.commercialexports, 2, "K", 1000, false), onlyenabled);
+                //StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Off Imports", vs.officeimports, 2, "K", 1000, false), onlyenabled);
+                //StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Off Exports", vs.officeexports, 2, "K", 1000, false), onlyenabled);
+                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "", "", "InfoIconOutsideConnections"));
                 statstopull = new List<StatisticsClassWrapper>();
             }
 
@@ -762,7 +872,7 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                 }
 
                 StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Eligible Workers", StatisticType.EligibleWorkers, 1, 1, ""), onlyenabled);
-                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Unemployed", eligibleworkers.ToString(), "InfoIconOutsideConnections", true));
+                catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, "Unemployed", eligibleworkers.ToString(), "InfoIconPopulationPressed", true));
                 catstopull.Last().m_targetred = .25f;
                 catstopull.Last().m_targetyellow = .15f;
                 statstopull = new List<StatisticsClassWrapper>();
