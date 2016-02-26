@@ -61,6 +61,7 @@ namespace CSLStatsPanel
                 CSLStatsPanelConfigSettings.m_DisplayPanel.value = true;
                 UIView uiView = GameObject.FindObjectOfType<UIView>();
                 if (uiView == null) return;
+                ThreadingCSLStatsMod.instance.loadConfigFile();
                 myStatsWindowPanel = (CSLStatsMasterWindow)UIView.GetAView().AddUIComponent(typeof(CSLStatsMasterWindow));
                 myStatsWindowPanel.name = "CSLStatsMasterPanel";
                 //myStatsWindowPanel.eventStatsConfigReset += new CSLStatsMasterWindow.eventStatsConfigResetHandler(myStatsWindowPanel_eventStatsConfigReset);
@@ -383,24 +384,6 @@ namespace CSLStatsPanel
             if (component != null)
                 component.parent.Focus();
         }
-
-        /*
-        void myconfigwindow_eventConfigTransparencyChanged(object sender, EventArgs e)
-        {
-            eventConfigTransparencyChanged(sender, e);
-        }
-         */
-        //public delegate void eventConfigTransparencyChangeHandler(object sender, EventArgs e);
-        //public event eventConfigTransparencyChangeHandler eventConfigTransparencyChanged;
-        /*
-        void myconfigwindow_eventStatsConfigReset(object sender, EventArgs e)
-        {
-            eventStatsConfigReset(sender, e);
-        }
-         */ 
-        //public delegate void eventStatsConfigResetHandler(object sender, EventArgs e);
-        //public event eventStatsConfigResetHandler eventStatsConfigReset;
-
 
         void myconfigwindow_eventModeConfigChanged(object sender, EventArgs e)
         {
@@ -744,10 +727,10 @@ namespace CSLStatsPanel
                 if (categorydata[i].capacityUsage > -1 && CSLStatsPanelConfigSettings.m_EnablePanelColors.value)
                 {
                     if (categorydata[i].capacityUsage > categorydata[i].m_targetred)
-                        m_categories[currentcat].color = new Color32(255, 0, 0, 255); //red
+                        m_categories[currentcat].color = CSLStatsPanelConfigSettings.DefaultPanelColor_CriticalStatus; //new Color32(255, 0, 0, 255); //red
                     else if (categorydata[i].capacityUsage > categorydata[i].m_targetyellow)
-                        m_categories[currentcat].color = new Color32(255, 255, 0, 255); //yellow
-                    else m_categories[currentcat].color = new Color32(0, 255, 0, 255); //green
+                        m_categories[currentcat].color = CSLStatsPanelConfigSettings.DefaultPanelColor_WarningStatus;//new Color32(255, 255, 0, 255); //yellow
+                    else m_categories[currentcat].color = CSLStatsPanelConfigSettings.DefaultPanelColor_NormalStatus;//new Color32(0, 255, 0, 255); //green
                 }
 
                 List<StatisticsClassWrapper> myscwlist = categorydata[i].activeStats;
@@ -832,12 +815,10 @@ namespace CSLStatsPanel
             if (running) return;
             running = true;
             string s = ""; bool usesinglefield = false; // <-- work around uses a single label
-            bool labelsadded = false;
             for (int i = 0;  i < TextFields.Count; i++)
             {
                 if (i >= m_textfields.Count && (!usesinglefield || i == 0))
                 {
-                    labelsadded = true;
                     m_textfields.Add(this.AddUIComponent<CSLStatsPanelLabel>());
                     m_textfields[i].name = "CSLStatsLabel_" + i.ToString();
                 }

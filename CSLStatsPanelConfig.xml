@@ -1,0 +1,216 @@
+﻿<root>
+  <CONFIGCOMMENTS>
+<!--
+2016-02-25 Operation40 *******************************************
+Warning: while this file exists, it overrides any updates that might come in thru workshop.  
+Click "Reset Config" to remove this file and revert back to all stats
+
+categories / stats may be reordered and/or remarked out
+new stats can be added if the referenced field actually exists (reflection is used in most cases - these are not hard-wired)
+
+active/deactive flags are also stored in the game settings file where they are actually updated
+
+active="false" here is experimental, leave it to true for now, disable categories in the UI in the game
+
+keystat="true" will display that stat as the category summary, EXCEPT when vehiclesummary was specified
+this is not useful at the moment since it wipes out the summary calculation on the category
+
+vehiclesummaryusedstat and vehiclesummarycapacitystat 
+evaluate the related vehicle numbers to see which is higher, and that stat is used as the summary.
+
+showstatssummary ="false" typically used to hide a more complicated expression 
+example: health summary targets 80% health (not 100), so at 80% the number would show 100% (to target) which is confusing
+also showing "Health -80" on the category description line is redundant because the 1st stat of the category is Health and needs to be there
+
+vehicle summary numbers (when used) will always show on the summary line when they are higher even if showstatssummary="false"
+
+  
+-->
+  </CONFIGCOMMENTS>
+  <CONFIGVERSION value="20160225a"></CONFIGVERSION>
+  <CONFIGSETTINGS>
+    <LOGGING enabled="true" tofile="true" tof7screen="false" />
+    <COLORS 
+      defaultPanelColor="0, 0, 255, 255"
+      transparentPanelColor="0, 0, 0, 0"
+      defaultPanelColor_NormalStatus="0, 255, 0, 255"
+      defaultPanelColor_WarningStatus="255, 255, 0, 255"
+      defaultPanelColor_CriticalStatus="255, 0, 0, 255"
+      />
+  </CONFIGSETTINGS>
+  <CATEGORY name="Power" active="true" icon="InfoIconElectricity" showstatsummary="true" summaryusedstat="Used" summarycapacitystat="Capacity">
+    <STAT name="Used" value="DistrictStats.dmusage" divisor="1000" divisorsuffix="MW" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="true" />
+    <STAT name="Capacity" value="StatisticType.ElectricityCapacity" divisor="1000" divisorsuffix="MW" multiplier="16" precision="2" keystat="false" alwaysaddsuffix="true" />
+  </CATEGORY>
+
+  <CATEGORY name="Water" active="true" icon="InfoIconWater" showstatsummary="true" summaryusedstat="Used" summarycapacitystat="Capacity">
+    <STAT name="Used" value="DistrictStats.waterbuffer" divisor="1" divisorsuffix="m³" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="true" />
+    <STAT name="Capacity" value="StatisticType.WaterCapacity" divisor="1" divisorsuffix="m³" multiplier="16" precision="2" keystat="false" alwaysaddsuffix="true" />
+    <STAT name="Pollution" value="StatisticType.WaterPollution" divisor="1" divisorsuffix="%" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="true" />
+  </CATEGORY>
+
+  <CATEGORY name="Sewage" active="true" icon="InfoIconWaterPressed" showstatsummary="true" summaryusedstat="Used" summarycapacitystat="Capacity">
+    <STAT name="Used" value="DistrictStats.sewagebuffer" divisor="1" divisorsuffix="m³" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="true" />
+    <STAT name="Capacity" value="StatisticType.SewageCapacity" divisor="1" divisorsuffix="m³" multiplier="16" precision="2" keystat="false" alwaysaddsuffix="true" />
+  </CATEGORY>
+
+  <CATEGORY name="Garbage" active="true" icon="InfoIconGarbage" showstatsummary="true"
+              summaryusedstat="Total" summarycapacitystat="Capacity"
+              vehiclesummaryusedstat="Vehicles Used" vehiclesummarycapacitystat="Vehicles Total">
+    <STAT name="Production" value="DistrictStats.garbage" divisor="1000" divisorsuffix="K" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Stored" value="StatisticType.GarbageAmount" divisor="1000" divisorsuffix="K" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Total" value="CustomStats.TotalGarbageAmount" divisor="1000" divisorsuffix="K" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Storage" value="StatisticType.GarbageCapacity" divisor="1000" divisorsuffix="K" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Incinerators" value="StatisticType.IncinerationCapacity" divisor="1000" divisorsuffix="K" multiplier="16" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Capacity" value="CustomStats.TotalGarbageCapacity" divisor="1000" divisorsuffix="K" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Piles" value="StatisticType.GarbagePiles" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Vehicles Used" value="VehicleStats.garbagetrucksinuse" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Vehicles Total" value="BuildingStats.garbagetrucks" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+
+  </CATEGORY>
+
+  <CATEGORY name="Health Services" active="true" icon="InfoIconHealth" showstatsummary="false"
+              summaryusedstat="CustomStats.InvertedHealth" summarycapacitystat="30"
+              vehiclesummaryusedstat="Vehicles Used" vehiclesummarycapacitystat="Vehicles Total">
+    <STAT name="Health" value="ImmaterialResourceManager.Resource.Health" divisor="1" divisorsuffix="%" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Well Being" value="ImmaterialResourceManager.Resource.Wellbeing" divisor="1" divisorsuffix="%" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Sick" value="DistrictStats.sickcount" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Capacity" value="StatisticType.HealCapacity" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Vehicles Used" value="VehicleStats.healthcarevehiclesinuse" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Vehicles Total" value="BuildingStats.healthcarevehicles" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+  </CATEGORY>
+
+  <CATEGORY name="Death Services" active="true" icon="InfoIconHealthPressed" showstatsummary="true"
+              summaryusedstat="CustomStats.TotalDeadAmount" summarycapacitystat="CustomStats.TotalDeadCapacity"
+              vehiclesummaryusedstat="Vehicles Used" vehiclesummarycapacitystat="Vehicles Total">
+    <STAT name="Amount" value="StatisticType.DeadAmount" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Waiting" value="DistrictStats.deadamount" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="In Transit" value="VehicleStats.bodiesintransit" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Capacity" value="StatisticType.DeadCapacity" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Cremate Capacity" value="StatisticType.CremateCapacity" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+
+    <STAT name="Vehicles Used" value="VehicleStats.hearseinuse" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Vehicles Total" value="BuildingStats.hearse" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+
+  </CATEGORY>
+
+  <CATEGORY name="Buildings" active="true" icon="ToolbarIconZoning" showstatsummary="true" summaryusedstat="Abandoned" summarycapacitystat="CustomStats.AbandonedBuildingTarget">
+    <STAT name="Count" value="BuildingStats.buildingcount" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Abandoned" value="StatisticType.AbandonedBuildings" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+  </CATEGORY>
+
+  <CATEGORY name="Fire" active="true" icon="InfoIconFireSafety" showstatsummary="false"
+            summaryusedstat="Hazard" summarycapacitystat="50"
+            vehiclesummaryusedstat="Vehicles Used" vehiclesummarycapacitystat="Vehicles Total">
+    <STAT name="Hazard" value="ImmaterialResourceManager.Resource.FireHazard" divisor="1" divisorsuffix="%" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="true" />
+    <STAT name="Buildings Burning" value="BuildingStats.onfire" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Vehicles Used" value="VehicleStats.firetrucksinuse" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Vehicles Total" value="BuildingStats.firetrucks" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+  </CATEGORY>
+
+  <CATEGORY name="Economy" active="true" icon="InfoIconLandValue" showstatsummary="false" summaryusedstat="Expenses" summarycapacitystat="Income">
+    <STAT name="Budget" value="CustomStats.Budget" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Income" value="CustomStats.Income" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Expenses" value="CustomStats.Expenses" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Entertainment" value="ImmaterialResourceManager.Resource.Entertainment" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Attractiveness" value="ImmaterialResourceManager.Resource.Attractiveness" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Cargo Transport" value="ImmaterialResourceManager.Resource.CargoTransport" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+
+    <STAT name="Density" value="ImmaterialResourceManager.Resource.Density" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Land Value" value="ImmaterialResourceManager.Resource.LandValue" divisor="1" divisorsuffix="₡/m²" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="true" />
+    <STAT name="ImmaterialResource" value="ImmaterialResourceManager.Resource.ImmaterialResource" divisor="1000" divisorsuffix="M" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Goods Produced" value="ImmaterialResourceManager.Resource.GoodsProduced" divisor="1000" divisorsuffix="K" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+  </CATEGORY>
+
+  <CATEGORY name="Trade" active="true" icon="InfoIconOutsideConnections" showstatsummary="false" summaryusedstat="" summarycapacitystat="">
+    <STAT name="Imports" value="VehicleStats.cargoimports" divisor="1000" divisorsuffix="K" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Exports" value="VehicleStats.cargoexports" divisor="1000" divisorsuffix="K" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Intracity" value="VehicleStats.intracitytransports" divisor="1000" divisorsuffix="K" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+
+    <STAT name="Imports Car" value="VehicleStats.carimports" divisor="1000" divisorsuffix="K" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Exports Car" value="VehicleStats.carexports" divisor="1000" divisorsuffix="K" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+
+    <STAT name="Imports Train" value="VehicleStats.trainimports" divisor="1000" divisorsuffix="K" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Exports Train" value="VehicleStats.trainexports" divisor="1000" divisorsuffix="K" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Imports Ship" value="VehicleStats.shipimports" divisor="1000" divisorsuffix="K" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Exports Ship" value="VehicleStats.shipexports" divisor="1000" divisorsuffix="K" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Imports Tram" value="VehicleStats.tramimports" divisor="1000" divisorsuffix="K" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Exports Tram" value="VehicleStats.tramexports" divisor="1000" divisorsuffix="K" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+
+  </CATEGORY>
+
+  <CATEGORY name="Citizens" active="true" icon="InfoIconPopulation" showstatsummary="false" summaryusedstat="Death Rate" summarycapacitystat="Birth Rate">
+    <STAT name="Count" value="DistrictStats.citizencount" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Move Rate" value="StatisticType.MoveRate" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Birth Rate" value="StatisticType.BirthRate" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Death Rate" value="StatisticType.DeathRate" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Homeless" value="CustomStats.Homeless" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+  </CATEGORY>
+
+  <CATEGORY name="Education" active="true" icon="InfoIconEducation" showstatsummary="true" summaryusedstat="Students" summarycapacitystat="Max Students">
+    <STAT name="Educated" value="CustomStats.educatedcount" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Level 0" value="CustomStats.educatedlevel0" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Level 1" value="CustomStats.educatedlevel1" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Level 2" value="CustomStats.educatedlevel2" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Level 3" value="CustomStats.educatedlevel3" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Students" value="StatisticType.StudentCount" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Max Students" value="StatisticType.EducationCapacity" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+  </CATEGORY>
+
+  <CATEGORY name="Unemployment" active="true" icon="InfoIconPopulationPressed" showstatsummary="true" summaryusedstat="Unemployed" summarycapacitystat="Eligible Workers"
+            summarystattargetred=".25"
+            summarystattargetyellow=".15">
+    <STAT name="Unemployed" value="StatisticType.Unemployed" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Level 0" value="CustomStats.unemployedlevel0" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Level 1" value="CustomStats.unemployedlevel1" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Level 2" value="CustomStats.unemployedlevel2" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Level 3" value="CustomStats.unemployedlevel3" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Eligible Workers" value="StatisticType.EligibleWorkers" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+  </CATEGORY>
+
+  <CATEGORY name="Crime" active="true" icon="InfoIconCrime" showstatsummary="false" summaryusedstat="Crime Rate" summarycapacitystat="20">
+    <STAT name="Crime Rate" value="DistrictStats.finalcrimerate" divisor="1" divisorsuffix="%" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Crimes" value="StatisticType.CrimeRate" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Vehicles Used" value="VehicleStats.policecarsinuse" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Vehicles Total" value="BuildingStats.policecars" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+  </CATEGORY>
+  
+  <CATEGORY name="Tourists" active="true" icon="InfoIconPublicTransportPressed" showstatsummary="true" summaryusedstat="" summarycapacitystat="">
+    <STAT name="Visits" value="StatisticType.TouristVisits" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Incoming" value="StatisticType.IncomingTourists" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+  </CATEGORY>
+
+  <CATEGORY name="Public Transit" active="true" icon="InfoIconPublicTransport" showstatsummary="false" summaryusedstat="80" summarycapacitystat="Availability">
+    <STAT name="Availability" value="ImmaterialResourceManager.Resource.PublicTransport" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Avg Passengers" value="StatisticType.AveragePassengers" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Busses" value="VehicleStats.passengerbusses" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Metro" value="VehicleStats.passengermetro" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Tram" value="VehicleStats.passengertram" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Trains" value="VehicleStats.passengertrains" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Ships" value="VehicleStats.passengerships" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Planes" value="VehicleStats.passengerplanes" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+  </CATEGORY>
+
+  <CATEGORY name="Pollution" active="true" icon="InfoIconPollution" showstatsummary="false" summaryusedstat="" summarycapacitystat="">
+    <STAT name="Noise" value="ImmaterialResourceManager.Resource.NoisePollution" divisor="1" divisorsuffix="%" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Ground" value="DistrictStats.groundpollution" divisor="1" divisorsuffix="%" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+  </CATEGORY>
+
+  <CATEGORY name="Traffic" active="true" icon="InfoIconTrafficCongestion" showstatsummary="true" summaryusedstat="CustomStats.AveragedStatTrafficDelay" summarycapacitystat="1">
+    <STAT name="Vehicles" value="VehicleStats.activevehicles" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Avg Delay" value="CustomStats.TrafficAvgDelay" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Max Delay" value="VehicleStats.highestdelay" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+  </CATEGORY>
+
+  <CATEGORY name="System Stats" active="true" icon="ToolbarIconHelp" showstatsummary="false" summaryusedstat="" summarycapacitystat="">
+    <STAT name="FPS" value="CustomStats.FPS" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+  </CATEGORY>
+
+  <CATEGORY name="Government" active="true" icon="ToolbarIconHelp" showstatsummary="false" summaryusedstat="" summarycapacitystat="">
+    <STAT name="Maint Trucks Used" value="VehicleStats.maintenancetrucksinuse" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Maint Trucks Total" value="BuildingStats.maintenancetrucks" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Snow Trucks Used" value="VehicleStats.snowtrucksinuse" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Snow Trucks Total" value="BuildingStats.snowtrucks" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+  
+  </CATEGORY>
+</root>

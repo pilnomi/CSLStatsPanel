@@ -13,12 +13,11 @@ namespace CSLStatsPanel
     {
         UIResizeHandle myresizepanel;
         UIPanel headerpanel;
-        UILabel headertext, resizelabel;
+        UILabel headertext;
         ConfigSettingsWindow myConfigWindowPanel;
 
         public ConfigWindow()
         {
-
             //this.color = new Color32(0, 0, 100, 200);
             this.backgroundSprite = "GenericPanel";
             this.autoLayoutDirection = LayoutDirection.Vertical;
@@ -89,42 +88,6 @@ namespace CSLStatsPanel
             this.BringToFront();
         }
 
-        /*
-        void myConfigWindowPanel_eventConfigTransparencyChanged(object sender, EventArgs e)
-        {
-            eventConfigTransparencyChanged(sender, e);
-            CloseButton_eventClick(null, null);
-        }
-
-        void myConfigWindowPanel_eventConfigReset(object sender, EventArgs e)
-        {
-            eventStatsConfigReset(sender, e);
-            CloseButton_eventClick(null, null);
-        }
-
-        void myConfigWindowPanel_eventModeConfigChanged(object sender, EventArgs e)
-        {
-            this.eventModeConfigChanged(sender, e);
-        }
-
-        public void myConfigWindowPanel_eventStatsConfigChanged(object sender, EventArgs e)
-        {
-            this.eventStatsConfigChanged(sender, e);
-        }
-        public delegate void eventStatsConfigResetHandler(object sender, EventArgs e);
-        public event eventStatsConfigResetHandler eventStatsConfigReset;
-
-        public delegate void eventStatsConfigChangedHandler(object sender, EventArgs e);
-        public event eventStatsConfigChangedHandler eventStatsConfigChanged;
-
-        public delegate void eventConfigModeChangedHandler(object sender, EventArgs e);
-        public event eventConfigModeChangedHandler eventModeConfigChanged;
-
-
-        public delegate void eventConfigTransparencyChangeHandler(object sender, EventArgs e);
-        public event eventConfigTransparencyChangeHandler eventConfigTransparencyChanged;
-        */
-
         void CloseButton_eventClick(UIComponent component, UIMouseEventParameter eventParam)
         {
             try
@@ -147,9 +110,6 @@ namespace CSLStatsPanel
         }
         protected override void OnMouseMove(UIMouseEventParameter p)
         {
-            //resizelabel.text = string.Format("x{0} y{1} w{2} h{3} px{4} py{5} r{6}", this.relativePosition.x,
-            //    this.relativePosition.y, this.width, this.height, p.position.x, p.position.y,
-            //    checkresizebox(p));
             if (dragging) this.position = new Vector3(this.position.x + p.moveDelta.x,
              this.position.y + p.moveDelta.y,
              this.position.z);
@@ -230,11 +190,7 @@ namespace CSLStatsPanel
         UILabel refreshIntervalLabel;
         void drawstatsconfig()
         {
-
-            
             UIScrollablePanel p = this.AddUIComponent<UIScrollablePanel>();
-            //p.width = this.width;
-            //p.height = 40;
             p.autoLayoutDirection = LayoutDirection.Horizontal;
             p.autoLayout = true;
             p.backgroundSprite = "GenericPanel";
@@ -262,34 +218,36 @@ namespace CSLStatsPanel
             p.FitChildrenHorizontally();
             p.FitToContents();
 
-            p = this.AddUIComponent<UIScrollablePanel>();
-            //p.width = this.width;
-            //p.height = 40;
-            p.autoLayoutPadding = new RectOffset(5, 5, 5, 5);
-            p.autoLayoutDirection = LayoutDirection.Horizontal;
-            p.autoLayout = true;
-            //p.wrapLayout = true;
-            useColors = p.AddUIComponent<UIButton>();
+            UIPanel pOptions = this.AddUIComponent<UIPanel>();
+            catpanels.Add(pOptions);
+
+            pOptions.autoLayout = true;
+            pOptions.wrapLayout = true;
+            pOptions.autoLayoutDirection = LayoutDirection.Horizontal;
+            pOptions.width = this.width - 5;
+            pOptions.autoLayoutPadding = new RectOffset(3, 3, 3, 3);
+            
+            useColors = pOptions.AddUIComponent<UIButton>();
             setcommonbuttonprops(useColors);
             useColors.text = "Use Panel Colors";
             useColors.tooltip = "Think colors are over-rated?  Toggle them on/off";
             useColors.eventClick += new MouseEventHandler(useColors_eventClick);
             useColors.textColor = (CSLStatsPanelConfigSettings.m_EnablePanelColors.value) ? selectedcolor : deselectedcolor;
 
-            UIButton displaySummaries = p.AddUIComponent<UIButton>();
+            UIButton displaySummaries = pOptions.AddUIComponent<UIButton>();
             setcommonbuttonprops(displaySummaries);
             displaySummaries.text = "% Summaries";
             displaySummaries.tooltip = "Toggle display of % summaries in expanded mode.";
             displaySummaries.textColor = (CSLStatsPanelConfigSettings.m_EnablePanelSummaries.value) ? selectedcolor : deselectedcolor;
             displaySummaries.eventClick += new MouseEventHandler(displaySummaries_eventClick);
 
-            UIButton miniMode = p.AddUIComponent<UIButton>();
+            UIButton miniMode = pOptions.AddUIComponent<UIButton>();
             setcommonbuttonprops(miniMode);
             miniMode.text = "Mini-Mode";
             miniMode.textColor = (CSLStatsPanelConfigSettings.m_MiniMode.value) ? selectedcolor : deselectedcolor;
             miniMode.eventClick += new MouseEventHandler(miniMode_eventClick);
 
-            UIButton showLabelsInMiniMode = p.AddUIComponent<UIButton>();
+            UIButton showLabelsInMiniMode = pOptions.AddUIComponent<UIButton>();
             setcommonbuttonprops(showLabelsInMiniMode);
             showLabelsInMiniMode.text = "Labels in Mini-Mode";
             showLabelsInMiniMode.tooltip = "Show service description labels while in mini-mode, turn this off to see only the icons";
@@ -297,35 +255,108 @@ namespace CSLStatsPanel
             showLabelsInMiniMode.textColor = (CSLStatsPanelConfigSettings.m_ShowLabelsInMiniMode.value) ? selectedcolor : deselectedcolor;
             showLabelsInMiniMode.eventClick += new MouseEventHandler(showLabelsInMiniMode_eventClick);
 
-            UIButton enableTransparency = p.AddUIComponent<UIButton>();
+            UIButton enableTransparency = pOptions.AddUIComponent<UIButton>();
             setcommonbuttonprops(enableTransparency);
             enableTransparency.text = "Transparency";
             enableTransparency.textColor = (CSLStatsPanelConfigSettings.m_EnableTransparency.value) ? selectedcolor : deselectedcolor;
             enableTransparency.eventClick += new MouseEventHandler(enableTransparency_eventClick);
 
-            UIButton useVehicleStatsInSummaries = p.AddUIComponent<UIButton>();
+            UIButton useVehicleStatsInSummaries = pOptions.AddUIComponent<UIButton>();
             setcommonbuttonprops(useVehicleStatsInSummaries);
             useVehicleStatsInSummaries.text = "Vehicle Usage";
             useVehicleStatsInSummaries.tooltip = "Use vehicle inuse/total on Summary % when it is higher than default used/capacity (excludes police)";
             useVehicleStatsInSummaries.textColor = (CSLStatsPanelConfigSettings.m_UseVechileStatsForSummaries.value) ? selectedcolor : deselectedcolor;
             useVehicleStatsInSummaries.eventClick += new MouseEventHandler(useVehicleStatsInSummaries_eventClick);
 
-            UIButton resetConfig = p.AddUIComponent<UIButton>();
+            UIButton resetConfig = pOptions.AddUIComponent<UIButton>();
             setcommonbuttonprops(resetConfig);
             resetConfig.text = "Reset Config";
             resetConfig.textColor = resetConfig.focusedTextColor;
             resetConfig.eventClick += new MouseEventHandler(resetConfig_eventClick);
 
 
-            p.FitChildrenHorizontally();
-            p.FitToContents();
+            UIButton customizeXMLConfig = pOptions.AddUIComponent<UIButton>();
+            setcommonbuttonprops(customizeXMLConfig);
+            customizeXMLConfig.text = "Custom XML Config";
+            customizeXMLConfig.tooltip = "Creates or opens a copy config file for you to customize stats further.";
+            customizeXMLConfig.autoSize = true;
+            customizeXMLConfig.textColor = customizeXMLConfig.focusedTextColor;
+            customizeXMLConfig.eventClick += customizeXMLConfig_eventClick;
 
+            UIButton reloadXMLConfig = pOptions.AddUIComponent<UIButton>();
+            setcommonbuttonprops(reloadXMLConfig);
+            reloadXMLConfig.text = "Reload XML Config";
+            reloadXMLConfig.tooltip = "Reload your custom XML config without having to reload your game.";
+            reloadXMLConfig.autoSize = true;
+            reloadXMLConfig.textColor = customizeXMLConfig.focusedTextColor;
+            reloadXMLConfig.eventClick += reloadXMLConfig_eventClick;
+
+            pOptions.autoSize = true;
+            pOptions.FitChildrenVertically();
+
+            if (ThreadingCSLStatsMod.loadedXMLConfigVersion != ThreadingCSLStatsMod.defaultXMLConfigVersion)
+            {
+                UIPanel pWarning = this.AddUIComponent<UIPanel>();
+                //catpanels.Add(pWarning);
+
+                pWarning.autoLayout = true;
+                pWarning.wrapLayout = true;
+                pWarning.autoLayoutDirection = LayoutDirection.Horizontal;
+                pWarning.width = this.width - 5;
+
+                pWarning.autoLayoutPadding = new RectOffset(3, 3, 3, 3);
+                UILabel customXmlConfigVersionWarning = pWarning.AddUIComponent<UILabel>();
+                customXmlConfigVersionWarning.text = ""
+                    + "Warning: Your config file is version \"" + ThreadingCSLStatsMod.loadedXMLConfigVersion + "\""
+                    + " a new version is available: \"" + ThreadingCSLStatsMod.defaultXMLConfigVersion + "\".";
+                customXmlConfigVersionWarning.textColor = customizeXMLConfig.focusedTextColor;
+                customXmlConfigVersionWarning = pWarning.AddUIComponent<UILabel>();
+                customXmlConfigVersionWarning.text = ""
+                    + " You may be missing new stats / features that have been added, but reseting will remove your customizations";
+                customXmlConfigVersionWarning.textColor = customizeXMLConfig.focusedTextColor;
+                pWarning.autoSize = true;
+                pWarning.FitChildrenVertically();
+            }
+
+            
 
             List<StatisticsCategoryWrapper> scw = CSLStatsPanelConfigSettings.Categories(false);
             for (int i = 0; i < scw.Count(); i++)
             {
                 drawstatsconfigpanel(scw[i]);
             }
+        }
+
+        void reloadXMLConfig_eventClick(UIComponent component, UIMouseEventParameter eventParam)
+        {
+            CSLStatsPanelConfigSettings.m_ConfigChanged.value = true; 
+            UIView.DestroyImmediate(this.parent);
+
+            ((UIButton)component).textColor = (CSLStatsPanelConfigSettings.m_UseVechileStatsForSummaries.value) ? selectedcolor : deselectedcolor;
+            ((UIButton)component).focusedColor = ((UIButton)component).textColor;
+            component.parent.Focus();
+        }
+
+        void customizeXMLConfig_eventClick(UIComponent component, UIMouseEventParameter eventParam)
+        {
+            try
+            {
+                string mydocs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                if (!System.IO.Directory.Exists(mydocs + "\\CSLStatsPanel"))
+                    System.IO.Directory.CreateDirectory(mydocs + "\\CSLStatsPanel");
+                if (!System.IO.File.Exists(mydocs + "\\CSLStatsPanel\\CSLStatsPanelConfig.xml"))
+                {
+                    System.IO.File.WriteAllText(mydocs + "\\CSLStatsPanel\\CSLStatsPanelConfig.xml", ThreadingCSLStatsMod.defaultXMLConfig);
+                }
+                System.Diagnostics.Process.Start(mydocs + "\\CSLStatsPanel\\CSLStatsPanelConfig.xml");
+            }
+            catch (Exception ex)
+            {
+                statlog.log("Configpanel customXML click: " + ex.Message);
+            }
+            ((UIButton)component).textColor = (CSLStatsPanelConfigSettings.m_UseVechileStatsForSummaries.value) ? selectedcolor : deselectedcolor;
+            ((UIButton)component).focusedColor = ((UIButton)component).textColor;
+            component.parent.Focus();
         }
 
         void useVehicleStatsInSummaries_eventClick(UIComponent component, UIMouseEventParameter eventParam)
@@ -342,19 +373,25 @@ namespace CSLStatsPanel
             CSLStatsPanelConfigSettings.m_EnableTransparency.value = !CSLStatsPanelConfigSettings.m_EnableTransparency.value;
             CSLStatsPanelConfigSettings.m_ConfigChanged.value = true;
             ((UIButton)component).textColor = (CSLStatsPanelConfigSettings.m_EnableTransparency.value) ? selectedcolor : deselectedcolor;
-            //component.parent.Focus();
-            //eventConfigTransparencyChanged(this, EventArgs.Empty);
         }
-
-        //public delegate void eventConfigTransparencyChangeHandler(object sender, EventArgs e);
-        //public event eventConfigTransparencyChangeHandler eventConfigTransparencyChanged;
 
         void resetConfig_eventClick(UIComponent component, UIMouseEventParameter eventParam)
         {
-            CSLStatsPanelConfigSettings.resetConfig();
-            CSLStatsPanelConfigSettings.m_ConfigChanged.value = true;
-            UIView.DestroyImmediate(this.parent);
-            //eventConfigReset(this, EventArgs.Empty);
+            try
+            {
+                CSLStatsPanelConfigSettings.resetConfig();
+                string mydocs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                if (System.IO.File.Exists(mydocs + "\\CSLStatsPanel\\CSLStatsPanelConfig.xml"))
+                    System.IO.File.Delete(mydocs + "\\CSLStatsPanel\\CSLStatsPanelConfig.xml");
+                if (System.IO.Directory.GetFiles(mydocs + "\\CSLStatsPanel").Count() == 0)
+                    System.IO.Directory.Delete(mydocs + "\\CSLStatsPanel");
+                CSLStatsPanelConfigSettings.m_ConfigChanged.value = true;
+                UIView.DestroyImmediate(this.parent);
+            }
+            catch (Exception Ex)
+            {
+                statlog.log("resetConfig: " + Ex.Message);
+            }
             
         }
 
@@ -428,16 +465,6 @@ namespace CSLStatsPanel
 
         UIPanel drawstatsconfigpanel(StatisticsCategoryWrapper scw)
         {
-            //UIScrollablePanel p = this.AddUIComponent<UIScrollablePanel>();
-            //p.backgroundSprite = "GenericPanel";
-            
-            //p.width = this.width;
-            //p.height = 40;
-            //p.autoLayoutDirection = LayoutDirection.Vertical;
-            //p.autoLayout = true;
-
-
-
             UIPanel catsubpanel = this.AddUIComponent<UIPanel>();
             catpanels.Add(catsubpanel);
             catsubpanel.autoLayout = true;
@@ -460,15 +487,8 @@ namespace CSLStatsPanel
             catsubpanel.autoSize = true;
             catname.eventClick += new MouseEventHandler(catsubpanel_eventClick);
 
-            //mypanels = new Dictionary<string, UIScrollablePanel>();
             for (int x = 0; x < scw.m_scwlist.Count(); x++)
             {
-                //UIScrollablePanel statsubpanel = catsubpanel.AddUIComponent<UIScrollablePanel>();
-                //statsubpanel.backgroundSprite = "GenericPanel";
-                //statsubpanel.autoLayout = true;
-                //statsubpanel.autoSize = true;
-                //statsubpanel.autoLayoutDirection = LayoutDirection.Horizontal;
-                //statsubpanel.width = p.width;
                 bool isStatActive = CSLStatsPanelConfigSettings.isStatActive(scw.m_category, scw.m_scwlist[x].m_desc);
                 UIButton statname = catsubpanel.AddUIComponent<UIButton>();
                 statname.name = scw.m_category + "|" + scw.m_scwlist[x].m_desc;
@@ -478,15 +498,8 @@ namespace CSLStatsPanel
                 setcommonbuttonprops(statname);
                 statname.text = scw.m_scwlist[x].m_desc;
                 statname.eventClick += new MouseEventHandler(statsubpanel_eventClick);
-                //mypanels.Add(scw.m_scwlist[x].m_desc, statsubpanel);
-
-                //statsubpanel.FitToContents();
-                //statsubpanel.FitChildrenHorizontally();
             }
             catsubpanel.FitChildrenVertically();
-            //catsubpanel.FitToContents();
-            
-            //p.FitChildrenVertically();
 
             
             return catsubpanel;
@@ -506,16 +519,8 @@ namespace CSLStatsPanel
             component.color = (isCatActive) ? selectedcolor : deselectedcolor;
             component.parent.color = component.color;
 
-            //eventStatsConfigChanged(this, EventArgs.Empty);
         }
-        /*
-        public delegate void eventConfigResetHandler(object sender, EventArgs e);
-        public event eventConfigResetHandler eventConfigReset;
-        public delegate void eventConfigModeChangedHandler(object sender, EventArgs e);
-        public event eventConfigModeChangedHandler eventModeConfigChanged;
-        public delegate void eventStatsConfigChangedHandler(object sender, EventArgs e);
-        public event eventStatsConfigChangedHandler eventStatsConfigChanged;
-        */
+
         Color32 selectedcolor = new Color32(0, 200, 0, 255),
             deselectedcolor = new Color32(200, 0, 0, 255);
 
@@ -589,14 +594,7 @@ namespace CSLStatsPanel
                 if (!CSLStatsPanelConfigSettings.configurationsettings.Contains(m_a))
                     CSLStatsPanelConfigSettings.configurationsettings.Add(m_a);
             }
-            /*
-            public customColor(string name, int r, int g, int b, int a)
-            {
-                m_name = name;
-                initVars();
-                m_r.value = r; m_g.value = g; m_b.value = b; m_a.value = a;
-            }
-             */ 
+
         }
         public class mySavedFloat
         {
@@ -699,6 +697,25 @@ namespace CSLStatsPanel
         {
             get { return m_transparentPanelColor.value; }
             set { m_transparentPanelColor.value = value; }
+        }
+
+        private static customColor m_defaultPanelColor_NormalStatus = new customColor("defaultPanelColor_NormalStatus", 0, 255, 0, 255); // green
+        public static Color32 DefaultPanelColor_NormalStatus
+        {
+            get { return m_defaultPanelColor_NormalStatus.value; }
+            set { m_defaultPanelColor_NormalStatus.value = value; }
+        }
+        private static customColor m_defaultPanelColor_WarningStatus = new customColor("defaultPanelColor_WarningStatus", 255, 255, 0, 255); //yellow
+        public static Color32 DefaultPanelColor_WarningStatus
+        {
+            get { return m_defaultPanelColor_WarningStatus.value; }
+            set { m_defaultPanelColor_WarningStatus.value = value; }
+        }
+        private static customColor m_defaultPanelColor_CriticalStatus = new customColor("defaultPanelColor_CriticalStatus", 255, 0, 0, 255); //red
+        public static Color32 DefaultPanelColor_CriticalStatus
+        {
+            get { return m_defaultPanelColor_CriticalStatus.value; }
+            set { m_defaultPanelColor_CriticalStatus.value = value; }
         }
 
         private static List<StatisticsCategoryWrapper> m_categories(bool onlyactive = true)

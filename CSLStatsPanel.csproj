@@ -18,7 +18,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
+    <OutputPath>H:\SteamLibrary\steamapps\workshop\content\255710\412708301\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -72,6 +72,11 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="StatsWindow.cs" />
     <Compile Include="StatWrappers.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="CSLStatsPanelConfig.xml">
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

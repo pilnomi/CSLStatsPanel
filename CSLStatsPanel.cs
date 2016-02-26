@@ -41,13 +41,11 @@ namespace CSLStatsPanel
 
             if (mode != LoadMode.LoadGame && mode != LoadMode.NewGame)
                 return;
-            //statlog.log("LoadingCSLStatsMod.OnLevelLoaded");
             StatusWindowInterface.destroy();
             if (ThreadingCSLStatsMod.instance != null)
             {
                 ThreadingCSLStatsMod.instance.refreshtimer.Stop();
                 ThreadingCSLStatsMod.instance.m_initialized = false;
-                statlog.log("reset ThreadingCSLStatsMod");
             }
         }
 
@@ -87,13 +85,119 @@ namespace CSLStatsPanel
             base.OnReleased();
         }
 
+        public static string defaultXMLConfig = "";
         public bool init()
         {
             if (m_initialized == true) return true;
             StatusWindowInterface.init();
             m_initialized = true;
             settimer();
+            loadConfigFile();
+
+            
+            
             return true;
+        }
+
+        public static string loadedXMLConfigVersion = "0", defaultXMLConfigVersion = "0";
+        public static string getXMLConfigVersion(string xmlconfigstring)
+        {
+            string r = "";
+            try
+            {
+                System.Xml.XmlDocument xdoc = new System.Xml.XmlDocument();
+                xdoc.LoadXml(xmlconfigstring);
+                System.Xml.XmlNodeList nodes = xdoc.GetElementsByTagName("CONFIGVERSION");
+                if (nodes.Count > 0)
+                {
+                    try
+                    {
+                        r = nodes[0].Attributes["value"].Value;
+                    }
+                    catch { }
+                }
+            }
+            catch (Exception ex)
+            {
+                statlog.log("loadConfigfile, parse config: " + ex.Message);
+            }
+            return r;
+        }
+
+        public void loadConfigSettings(string xmlconfigstring)
+        {
+            System.Xml.XmlDocument xdoc = new System.Xml.XmlDocument();
+            xdoc.LoadXml(xmlconfigstring);
+            System.Xml.XmlNodeList nodes = xdoc.GetElementsByTagName("CONFIGSETTINGS");
+            if (nodes.Count > 0)
+            {
+                System.Xml.XmlNodeList n = xdoc.GetElementsByTagName("LOGGING");
+                if (n.Count > 0) 
+                {
+                    bool.TryParse(XMLHelper.safeAttributes(n[0], "enabled"), out statlog.enablelogging);
+                    bool.TryParse(XMLHelper.safeAttributes(n[0], "tofile"), out statlog.enablelogtofile);
+                    bool.TryParse(XMLHelper.safeAttributes(n[0], "tof7screen"), out statlog.enablelogtoscreen);
+                    if (statlog.enablelogging) statlog.log("logging enabled");
+                }
+
+                n = xdoc.GetElementsByTagName("COLORS");
+                if (n.Count > 0)
+                {
+                    string color = XMLHelper.safeAttributes(n[0], "defaultPanelColor");
+                    if (color.Split(',').Length == 4)
+                        CSLStatsPanelConfigSettings.DefaultPanelColor = parseColor(color);
+                    color = XMLHelper.safeAttributes(n[0], "transparentPanelColor");
+                    if (color.Split(',').Length == 4)
+                        CSLStatsPanelConfigSettings.TransparentPanelColor = parseColor(color);
+
+                    color = XMLHelper.safeAttributes(n[0], "defaultPanelColor_NormalStatus");
+                    if (color.Split(',').Length == 4)
+                        CSLStatsPanelConfigSettings.DefaultPanelColor_NormalStatus = parseColor(color);
+                    color = XMLHelper.safeAttributes(n[0], "defaultPanelColor_WarningStatus");
+                    if (color.Split(',').Length == 4)
+                        CSLStatsPanelConfigSettings.DefaultPanelColor_WarningStatus = parseColor(color);
+                    color = XMLHelper.safeAttributes(n[0], "defaultPanelColor_CriticalStatus");
+                    if (color.Split(',').Length == 4)
+                        CSLStatsPanelConfigSettings.DefaultPanelColor_CriticalStatus = parseColor(color);
+                }
+            }
+        }
+
+        UnityEngine.Color32 parseColor(string color)
+        {
+            byte r = 0, g = 0, b = 0, a = 255;
+            byte.TryParse(color.Split(',')[0], out r);
+            byte.TryParse(color.Split(',')[1], out g);
+            byte.TryParse(color.Split(',')[2], out b);
+            byte.TryParse(color.Split(',')[3], out a);
+            return new UnityEngine.Color32(r, g, b, a);
+        }
+
+        public void loadConfigFile()
+        {
+            try
+            {
+                defaultXMLConfig = GetResourceTextFile("CSLStatsPanelConfig.xml");
+                defaultXMLConfigVersion = getXMLConfigVersion(defaultXMLConfig);
+
+                string mydocs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                if (System.IO.File.Exists(mydocs + "\\CSLStatsPanel\\CSLStatsPanelConfig.xml"))
+                {
+                    defaultXMLConfig = System.IO.File.ReadAllText(mydocs + "\\CSLStatsPanel\\CSLStatsPanelConfig.xml");
+                    loadedXMLConfigVersion = getXMLConfigVersion(defaultXMLConfig);
+                }
+                else loadedXMLConfigVersion = defaultXMLConfigVersion;
+
+                loadConfigSettings(defaultXMLConfig);
+            }
+            catch (Exception ex)
+            {
+                statlog.log("loadConfigfile: " + ex.Message);
+                loadedXMLConfigVersion = defaultXMLConfigVersion;
+            }
+            finally
+            {
+            }
         }
 
         public override void OnCreated(IThreading threading)
@@ -126,7 +230,7 @@ namespace CSLStatsPanel
             }
             catch(Exception ex)
             {
-                statlog.log(ex.Message);
+                statlog.log("refreshtimer_elapsed: " + ex.Message);
             }
             finally
             {
@@ -153,6 +257,7 @@ namespace CSLStatsPanel
             {
                 StatusWindowInterface.cacheddata = null;
                 CSLStatsPanelConfigSettings.m_ConfigChanged.value = false;
+                loadConfigFile();
                 StatusWindowInterface.resetstatswindow();
                 StatusWindowInterface.doReset = true;
                 myrefreshrate = 0; myminframes = 2;
@@ -168,23 +273,66 @@ namespace CSLStatsPanel
             {
                 StatusWindowInterface.updateText();
             }
-            catch (Exception ex) { statlog.log(ex.Message); }
+            catch (Exception ex) { statlog.log("statuswindowinterface.updatetext: " + ex.Message); }
         }
+
+        public string GetResourceTextFile(string filename)
+        {
+            string result = string.Empty;
+            //foreach (string s in this.GetType().Assembly.GetManifestResourceNames())
+            //    statlog.log(s);
+
+            using (System.IO.Stream stream = this.GetType().Assembly.
+                       GetManifestResourceStream("CSLStatsPanel." + filename))
+            {
+                if (stream == null) statlog.log("default config stream null");
+                using (System.IO.StreamReader sr = new System.IO.StreamReader(stream))
+                {
+                    result = sr.ReadToEnd();
+                }
+            }
+            return result;
+        }
+
     }
 
     
     public static class statlog
         {
-            public static bool enablelogging = false;
+            public static bool enablelogging = false, enablelogtofile = true, enablelogtoscreen = false;
             public static void log(string logtext)
             {
                 if (!enablelogging) return;
                 //UnityEngine.Debug.Log(logtext);
-                
-                DebugOutputPanel.AddMessage(ColossalFramework.Plugins.PluginManager.MessageType.Message, logtext);
+
+                if (enablelogtofile) System.IO.File.AppendAllText(@"cslstatspanelog.txt", System.DateTime.Now.ToString() + logtext + Environment.NewLine);
+                if (enablelogtoscreen) DebugOutputPanel.AddMessage(ColossalFramework.Plugins.PluginManager.MessageType.Message, "CSLStatsPanel: " + logtext);
             }
         }
 
+    public static class XMLHelper
+    {
+        public static string safeAttributes(System.Xml.XmlNode n, string attributename)
+        {
+            string r = "";
+            try
+            {
+                r = n.Attributes[attributename].Value;
+            }
+            catch { }
+            return r;
+        }
+    }
 
+    public static class DataHelper
+    {
+
+        public static bool isnumeric(object o)
+        {
+            decimal d = 0;
+            return decimal.TryParse(o.ToString(), out d);
+        }
+
+    }
 }
 

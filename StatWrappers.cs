@@ -7,7 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Management;
+//using System.Management;
 
 namespace CSLStatsPanel
 {
@@ -36,8 +36,8 @@ namespace CSLStatsPanel
 
             for (int i = 0; i < m_scwlist.Count(); i++)
             {
-                if (m_scwlist[i].m_desc == m_resourceusedfield && !string.IsNullOrEmpty(m_resourceusedfield)) m_resourceusedindex = i;
-                if (m_scwlist[i].m_desc == m_resourcecapacityfield && !string.IsNullOrEmpty(m_resourcecapacityfield)) m_resourcecapacityindex = i;
+                if (m_scwlist[i].m_desc.ToUpper() == m_resourceusedfield.ToUpper() && !string.IsNullOrEmpty(m_resourceusedfield)) m_resourceusedindex = i;
+                if (m_scwlist[i].m_desc.ToUpper() == m_resourcecapacityfield.ToUpper() && !string.IsNullOrEmpty(m_resourcecapacityfield)) m_resourcecapacityindex = i;
                 if (m_resourcecapacityindex > -1 && m_resourceusedindex > -1) break;
             }
 
@@ -53,6 +53,8 @@ namespace CSLStatsPanel
                 if (float.TryParse(m_resourceusedfield, out t))
                     m_resourceusedliteral = t;
             }
+
+            
         }
 
         public bool isDeficient
@@ -76,8 +78,10 @@ namespace CSLStatsPanel
                 
                 if ((m_resourceusedindex == -1 && m_resourceusedliteral == -1) ||
                     (m_resourcecapacityindex == -1 && m_resourcecapacityliteral == -1)) return -1;
-                float usedvalue = (m_resourceusedliteral == -1) ? m_scwlist[m_resourceusedindex].m_value : m_resourceusedliteral;
-                float capacityvalue = (m_resourcecapacityliteral == -1) ? m_scwlist[m_resourcecapacityindex].m_value : m_resourcecapacityliteral;
+                //float usedvalue = (m_resourceusedliteral == -1) ? m_scwlist[m_resourceusedindex].m_value : m_resourceusedliteral;
+                //float capacityvalue = (m_resourcecapacityliteral == -1) ? m_scwlist[m_resourcecapacityindex].m_value : m_resourcecapacityliteral;
+                float usedvalue = (m_resourceusedliteral == -1) ? m_scwlist[m_resourceusedindex].m_finalvalue : m_resourceusedliteral;
+                float capacityvalue = (m_resourcecapacityliteral == -1) ? m_scwlist[m_resourcecapacityindex].m_finalvalue : m_resourcecapacityliteral;
                 if (usedvalue > 0 && capacityvalue <= 0) return 1;
                 return (usedvalue / capacityvalue);
             }
@@ -223,7 +227,8 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
     {
         public int onfire = 0, buildingcount = 0,
             garbagetrucks = 0, firetrucks = 0, hearse = 0, policecars = 0, healthcarevehicles = 0,
-            workplacecount0, workplacecount1, workplacecount2, workplacecount3;
+            workplacecount0, workplacecount1, workplacecount2, workplacecount3,
+            maintenancetrucks = 0, snowtrucks=0;
         public buildingStats()
         {
             BuildingManager bm = Singleton<BuildingManager>.instance;
@@ -265,7 +270,10 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                     healthcarevehicles += (productionRate * ((HospitalAI)bi).m_ambulanceCount + 99) / 100;
                 else if (t == typeof(CemeteryAI))
                     if (!isEmptying && !isFull) hearse += (productionRate * ((CemeteryAI)bi).m_hearseCount + 99) / 100;
-
+                else if (t == typeof(MaintenanceDepotAI))
+                        maintenancetrucks += (productionRate * ((MaintenanceDepotAI)bi).m_maintenanceTruckCount + 99) / 100;
+                else if (t==typeof(SnowDumpAI))
+                        snowtrucks += (productionRate * ((SnowDumpAI)bi).m_snowTruckCount + 99) / 100;
                 if (bm.m_buildings.m_buffer[i].m_fireIntensity > 0) onfire++;
             }
 
@@ -335,14 +343,15 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
     {
         public double activevehicles = 0,
             garbagetrucksinuse = 0, firetrucksinuse = 0, hearseinuse = 0, policecarsinuse = 0, healthcarevehiclesinuse = 0,
-            passengerbusses = 0, passengerships = 0, passengertrains = 0, passengerplanes = 0, passengermetro = 0,
-            cargocars = 0, cargobusses = 0, cargoships = 0, cargotrains = 0, cargoplanes = 0, cargometro = 0,
-            commercialcars = 0, commercialbusses = 0, commercialships = 0, commercialtrains = 0, commercialplanes = 0, commercialmetro = 0,
-            officecars = 0, officebusses = 0, officeships = 0, officetrains = 0, officeplanes = 0, officemetro = 0,
+            maintenancetrucksinuse = 0, snowtrucksinuse=0,
+            passengerbusses = 0, passengerships = 0, passengertrains = 0, passengerplanes = 0, passengermetro = 0, passengertram = 0,
+            cargocars = 0, cargobusses = 0, cargoships = 0, cargotrains = 0, cargoplanes = 0, cargometro = 0, cargotrams = 0,
+            commercialcars = 0, commercialbusses = 0, commercialships = 0, commercialtrains = 0, commercialplanes = 0, commercialmetro = 0, commercialtrams = 0,
+            officecars = 0, officebusses = 0, officeships = 0, officetrains = 0, officeplanes = 0, officemetro = 0, officetrams = 0,
             waitcounter=0,blockcounter=0, highestwait=0, highestblock=0, highestdelay=0, delay=0, bodiesintransit=0,
             cargoexports =0, cargoimports=0,
-            carexports = 0, carimports = 0, trainexports = 0, trainimports = 0,
-            metroexports = 0, metroimports = 0, shipexports = 0, shipimports = 0,
+            carexports = 0, carimports = 0, trainexports = 0, trainimports = 0, tramimports=0,
+            metroexports = 0, metroimports = 0, shipexports = 0, shipimports = 0, tramexports=0,
             planeexports = 0, planeimports = 0, 
             industryimports=0, industryexports=0, commercialimports=0, commercialexports=0, officeimports=0, officeexports=0,
             intracitytransports=0;
@@ -390,9 +399,16 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                 bool targetbuildingisplayer = (bm.m_buildings.m_buffer[myv.m_targetBuilding].m_flags.IsFlagSet(Building.Flags.Untouchable)) ? false : true;
                 uint transfersize = myv.m_transferSize;
                 TransferManager.TransferReason transfertype = (TransferManager.TransferReason)myv.m_transferType;
-
+                
                 switch (myv.Info.m_class.m_service)
                 {
+                    case ItemClass.Service.Government:
+                    case ItemClass.Service.Road:
+                        if (myv.Info.m_vehicleAI.GetType() == typeof(MaintenanceTruckAI))
+                            maintenancetrucksinuse++;
+                        if (myv.Info.m_vehicleAI.GetType() == typeof(SnowTruckAI))
+                            snowtrucksinuse++;
+                        break;
                     case ItemClass.Service.Garbage:
                         if (buildingisvalid) garbagetrucksinuse++;
                         break;
@@ -431,6 +447,12 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                                     passengertrains++;
                                 if (sourcebuildingisplayer && !targetbuildingisplayer) trainexports += transfersize;
                                 if (targetbuildingisplayer && !sourcebuildingisplayer) trainimports += transfersize;
+                                break;
+                            case ItemClass.SubService.PublicTransportTram:
+                                if (buildingisvalid)
+                                    passengertram++;
+                                if (sourcebuildingisplayer && !targetbuildingisplayer) tramexports += transfersize;
+                                if (targetbuildingisplayer && !sourcebuildingisplayer) tramimports += transfersize;
                                 break;
                             case ItemClass.SubService.PublicTransportShip:
                                 if (buildingisvalid)
@@ -484,6 +506,11 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                                 if (sourcebuildingisplayer && !targetbuildingisplayer) trainexports += transfersize;
                                 if (targetbuildingisplayer && !sourcebuildingisplayer) trainimports += transfersize;
                                 break;
+                            case VehicleInfo.VehicleType.Tram:
+                                commercialtrams++;
+                                if (sourcebuildingisplayer && !targetbuildingisplayer) tramexports += transfersize;
+                                if (targetbuildingisplayer && !sourcebuildingisplayer) tramimports += transfersize;
+                                break;
                         }
                         break;
                     case ItemClass.Service.Office:
@@ -518,6 +545,11 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                                 officetrains++;
                                 if (sourcebuildingisplayer && !targetbuildingisplayer) trainexports += transfersize;
                                 if (targetbuildingisplayer && !sourcebuildingisplayer) trainimports += transfersize;
+                                break;
+                            case VehicleInfo.VehicleType.Tram:
+                                officetrams++;
+                                if (sourcebuildingisplayer && !targetbuildingisplayer) tramexports += transfersize;
+                                if (targetbuildingisplayer && !sourcebuildingisplayer) tramimports += transfersize;
                                 break;
                         }
                         break;
@@ -556,6 +588,11 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                                 if (targetbuildingisplayer && !sourcebuildingisplayer) trainimports += transfersize;
                                 cargotrains++;
                                 break;
+                            case VehicleInfo.VehicleType.Tram:
+                                if (sourcebuildingisplayer && !targetbuildingisplayer) tramexports += transfersize;
+                                if (targetbuildingisplayer && !sourcebuildingisplayer) tramimports += transfersize;
+                                cargotrams++;
+                                break;
                         }
                         break;
                 }
@@ -592,6 +629,31 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
 
         public static AveragedStat TrafficWaitAverage = new AveragedStat(10);
 
+        public static float GetStat(StatisticType st)
+        {
+            try
+            {
+                StatisticsManager sm = Singleton<StatisticsManager>.instance;
+                StatisticBase sb = sm.Get(st);
+                if (sb != null)
+                {
+                    return sb.GetLatestFloat();
+                }
+            }catch{}
+            return 0f;
+        }
+        public static float GetStat(ImmaterialResourceManager.Resource st)
+        {
+            try
+            {
+                ImmaterialResourceManager im = Singleton<ImmaterialResourceManager>.instance;
+                int outint = 0;
+                im.CheckTotalResource(st, out outint);
+                return outint;
+            }
+            catch { }
+            return 0f;
+        }
 
         public static void StatAdd(ref List<StatisticsClassWrapper> scwlist, StatisticsClassWrapper scwtoadd, bool onlyenabled)
         {
@@ -601,8 +663,374 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
             }
         }
 
+
+        public static string customStatReplacer(districtStats ds, vehiclestats vs, buildingStats bs, string stringtoanalyze)
+        {
+
+            if (string.IsNullOrEmpty(stringtoanalyze)) return stringtoanalyze;
+            stringtoanalyze = stringtoanalyze.ToLower().Trim();
+
+            if (stringtoanalyze.EndsWith(".totalgarbageamount"))
+            {
+                decimal customGarbageAmount = (decimal)MasterStatsWrapper.GetStat(StatisticType.GarbageAmount) + (decimal)ds.garbage;
+                return customGarbageAmount.ToString();
+            }
+            else if (stringtoanalyze.EndsWith(".totalgarbagecapacity"))
+            {
+                decimal customGarbageCapacity = (decimal)MasterStatsWrapper.GetStat(StatisticType.GarbageCapacity) + (decimal)MasterStatsWrapper.GetStat(StatisticType.IncinerationCapacity);
+                return customGarbageCapacity.ToString();
+
+            }
+            else if (stringtoanalyze.EndsWith(".invertedhealth"))
+            {
+                decimal customInvertedHealth = 100 - (decimal)MasterStatsWrapper.GetStat(ImmaterialResourceManager.Resource.Health);
+                return customInvertedHealth.ToString();
+            }
+            else if (stringtoanalyze.EndsWith(".totaldeadamount"))
+            {
+                return (MasterStatsWrapper.GetStat(StatisticType.DeadAmount) + ds.deadamount).ToString();
+            }
+            else if (stringtoanalyze.EndsWith(".totaldeadcapacity"))
+            {
+                return (MasterStatsWrapper.GetStat(StatisticType.DeadCapacity) + MasterStatsWrapper.GetStat(StatisticType.CremateCapacity)).ToString();
+            }
+            else if (stringtoanalyze.EndsWith(".abandonedbuildingtarget"))
+            {
+                return (bs.buildingcount * .25).ToString();
+            }
+
+            else if (stringtoanalyze.EndsWith(".budget"))
+            {
+                return (servicesincome - servicesexpenses).ToString();
+            }
+            else if (stringtoanalyze.EndsWith(".income"))
+            {
+                return (servicesincome).ToString();
+            }
+            else if (stringtoanalyze.EndsWith(".expenses"))
+            {
+                return (servicesexpenses).ToString();
+            }
+
+            else if (stringtoanalyze.EndsWith(".homeless"))
+            {
+                return (ds.educationData[0].m_finalHomeless
+                    + ds.educationData[1].m_finalHomeless
+                    + ds.educationData[2].m_finalHomeless
+                    + ds.educationData[3].m_finalHomeless).ToString();
+            }
+            else if (stringtoanalyze.EndsWith(".eligibleworkers"))
+            {
+                return (ds.educationData[0].m_finalEligibleWorkers
+                    + ds.educationData[1].m_finalEligibleWorkers
+                    + ds.educationData[2].m_finalEligibleWorkers
+                    + ds.educationData[3].m_finalEligibleWorkers).ToString();
+            }
+            else if (stringtoanalyze.EndsWith(".educatedcount"))
+            {
+                return (ds.educated1 + ds.educated2 + ds.educated3).ToString();
+            }
+            else if (stringtoanalyze.Substring(0, stringtoanalyze.Length - 1).EndsWith(".educatedlevel"))
+            {
+
+                string[] educatedlevels = new string[4];
+                for (int i = 0; i < 4; i++)
+                {
+                    educatedlevels[i] =
+                         (ds.educationData[i].m_finalEligibleWorkers == 0) ? string.Format("L{0}: 0.00% - 0", i) :
+                         string.Format("L{2}: {0:0.00%} - {1}",
+                         ds.educationData[i].m_finalCount / (double)ds.citizencount,
+                         ds.educationData[i].m_finalCount,
+                         i);
+                }
+
+
+                if (stringtoanalyze.EndsWith(".educatedlevel0"))
+                {
+                    return educatedlevels[0];
+                }
+                else if (stringtoanalyze.EndsWith(".educatedlevel1"))
+                {
+                    return educatedlevels[1];
+                }
+                else if (stringtoanalyze.EndsWith(".educatedlevel2"))
+                {
+                    return educatedlevels[2];
+                }
+                else if (stringtoanalyze.EndsWith(".educatedlevel3"))
+                {
+                    return educatedlevels[3];
+                }
+            }
+            else if (stringtoanalyze.Substring(0, stringtoanalyze.Length - 1).EndsWith(".unemployedlevel"))
+            {
+                string[] unemployedlevels = new string[4];
+                for (int i = 0; i < 4; i++)
+                {
+                    unemployedlevels[i] =
+                        (ds.educationData[i].m_finalEligibleWorkers == 0) ? string.Format("L{0}: 0.00% - 0", i) : string.Format("L{2}: {1:0.00%} - {0}",
+                        ds.educationData[i].m_finalUnemployed,
+                        ds.educationData[i].m_finalUnemployed / (double)ds.educationData[i].m_finalEligibleWorkers,
+                        i);
+                }
+                if (stringtoanalyze.EndsWith(".unemployedlevel0"))
+                {
+                    return unemployedlevels[0];
+                }
+                else if (stringtoanalyze.EndsWith(".unemployedlevel1"))
+                {
+                    return unemployedlevels[1];
+                }
+                else if (stringtoanalyze.EndsWith(".unemployedlevel2"))
+                {
+                    return unemployedlevels[2];
+                }
+                else if (stringtoanalyze.EndsWith(".unemployedlevel3"))
+                {
+                    return unemployedlevels[3];
+                }
+            }
+            else if (stringtoanalyze.EndsWith(".trafficavgdelay"))
+            {
+                return (vs.delay / vs.activevehicles).ToString();
+            }
+            else if (stringtoanalyze.EndsWith(".averagedstattrafficdelay"))
+            {
+                double avgstat = MasterStatsWrapper.TrafficWaitAverage.AddStat((float)(vs.delay / vs.activevehicles));
+                return avgstat.ToString();
+            }
+            else if (stringtoanalyze.EndsWith(".fps"))
+            {
+                return ThreadingCSLStatsMod.framespersecond.ToString();
+            }
+            return stringtoanalyze;
+        }
+
+        
+        public static double myincome = 0, myexpenses = 0;
+        public static int servicesexpenses=0, servicesincome=0;
+        public static void refreshservicesandexpenses()
+        {
+
+            if (!pollsinitialized) InitializePolls();
+
+                myexpenses = 0;myincome = 0;
+                servicesexpenses = 0; servicesincome = 0;
+
+                basicIncomePolls[0].Poll(Settings.moneyFormat, LocaleManager.cultureInfo);
+                myincome += basicIncomePolls[0].income;
+                
+                for (int j = 0; j < budgetExpensesPolls.Length; j++)
+                {
+                    budgetExpensesPolls[j].Poll(Settings.moneyFormat, LocaleManager.cultureInfo);
+                    myexpenses += budgetExpensesPolls[j].expenses;
+                }
+                myexpenses += expensesPoliciesTotal;
+                servicesexpenses = (int)myexpenses / 100; // tempscw.m_value / 100;
+                servicesincome = (int)myincome / 100; // tempscw.m_value / 100;
+
+        }
+
+        public static List<StatisticsCategoryWrapper> getstats3(bool onlyenabled, string xmlconfig)
+        {
+            onlyenabled = false;
+            List<StatisticsCategoryWrapper> catstopull = new List<StatisticsCategoryWrapper>();
+            List<StatisticsClassWrapper> statstopull = new List<StatisticsClassWrapper>();
+            districtStats ds = new districtStats();
+            buildingStats bs = new buildingStats();
+            vehiclestats vs = new vehiclestats();
+            refreshservicesandexpenses();
+
+            System.Xml.XmlDocument xmld = new System.Xml.XmlDocument();
+            xmld.LoadXml(xmlconfig);
+            
+            System.Xml.XmlNode root = xmld.ChildNodes[0];
+            for (int i = 0; i < root.ChildNodes.Count; i++)
+            {
+                System.Xml.XmlNode catnode = root.ChildNodes[i];
+                if (catnode.Name.ToUpper().Trim() == "CATEGORY")
+                {
+                    string cat = XMLHelper.safeAttributes(catnode, "name");
+                    bool active = bool.Parse(XMLHelper.safeAttributes(catnode, "active"));
+                    string icon = XMLHelper.safeAttributes(catnode, "icon");
+                    bool showstatssummary = bool.Parse(XMLHelper.safeAttributes(catnode, "showstatsummary"));
+                    string summaryusedstat = customStatReplacer(ds, vs, bs, XMLHelper.safeAttributes(catnode, "summaryusedstat"));
+                    string summarycapacitystat = customStatReplacer(ds, vs, bs, XMLHelper.safeAttributes(catnode, "summarycapacitystat"));
+                    string summarykeystat = "";
+                    string vehiclesummaryusedstat = "", vehiclesummarycapacitystat = "";
+                    if (XMLHelper.safeAttributes(catnode, "vehiclesummaryusedstat") != "" && XMLHelper.safeAttributes(catnode, "vehiclesummarycapacitystat") != "")
+                    {
+                        vehiclesummaryusedstat = customStatReplacer(ds, vs, bs, XMLHelper.safeAttributes(catnode, "vehiclesummaryusedstat"));
+                        vehiclesummarycapacitystat = customStatReplacer(ds, vs, bs, XMLHelper.safeAttributes(catnode, "vehiclesummarycapacitystat"));
+                    }
+
+                    if ((CSLStatsPanelConfigSettings.isCatActive(cat) && active) || !onlyenabled)
+                    {
+                        for (int c = 0; c < catnode.ChildNodes.Count; c++ )
+                        {
+                            System.Xml.XmlNode statnode = catnode.ChildNodes[c];
+                            string statname = XMLHelper.safeAttributes(statnode, "name");
+                            string value = XMLHelper.safeAttributes(statnode, "value");
+                            decimal divisor = decimal.Parse(XMLHelper.safeAttributes(statnode, "divisor"));
+                            string divisorsuffix = XMLHelper.safeAttributes(statnode, "divisorsuffix");
+                            decimal multiplier = decimal.Parse(XMLHelper.safeAttributes(statnode, "multiplier"));
+                            int precision = int.Parse(XMLHelper.safeAttributes(statnode, "precision"));
+                            if (bool.Parse(XMLHelper.safeAttributes(statnode, "keystat")))
+                                summarykeystat = statname;
+                            bool alwaysaddsuffix = bool.Parse(XMLHelper.safeAttributes(statnode, "alwaysaddsuffix"));
+                            
+                            if (value.StartsWith("CustomStats."))
+                            {
+                                string valuestring = customStatReplacer(ds, vs, bs, value);
+                                if (DataHelper.isnumeric(valuestring))
+                                {
+                                    decimal valueliteral = decimal.Parse(valuestring);
+                                    StatAdd(ref statstopull, new StatisticsClassWrapper(cat, statname, double.Parse((valueliteral / divisor).ToString()), precision, divisorsuffix, multiplier, alwaysaddsuffix), onlyenabled);
+                                }
+                                else
+                                {
+                                    StatAdd(ref statstopull, new StatisticsClassWrapper(cat, statname, 0), onlyenabled);
+                                    statstopull.Last().statstring = valuestring;
+                                }
+                            }
+                            else if (value.StartsWith("DistrictStats.") 
+                                || value.StartsWith("VehicleStats.")
+                                || value.StartsWith("BuildingStats."))
+                            {
+                                try
+                                {
+                                    object queryobject = ds;
+                                if (value.StartsWith("VehicleStats.")) queryobject = vs;
+                                if (value.StartsWith("BuildingStats")) queryobject = bs;
+
+                                string valuestring = "0";
+                                decimal valueliteral = 0;
+                                System.Reflection.FieldInfo[] mi = queryobject.GetType().GetFields();
+                                
+                                foreach (System.Reflection.FieldInfo m in mi)
+                                {
+                                    
+                                    if (value.ToUpper().Trim().EndsWith("." + m.Name.ToUpper().Trim()))
+                                    {
+                                        object fieldvalue =  m.GetValue(queryobject);
+                                        if (fieldvalue != null)
+                                        {
+                                            if (DataHelper.isnumeric(fieldvalue))
+                                            {
+                                                if (decimal.TryParse(fieldvalue.ToString(), out valueliteral))
+                                                    valuestring = valueliteral.ToString();
+
+                                            }
+                                        }
+                                        break;
+                                    }
+                                }
+                                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, statname, double.Parse((valueliteral / divisor).ToString()), precision, divisorsuffix, multiplier, alwaysaddsuffix), onlyenabled);
+                                }
+                                catch (Exception ex)
+                                {
+                                    statlog.log("cat: " + cat + " stat:" + statname + " error:" + ex.Message);
+                                }
+                            }
+                            else if (value.StartsWith("StatisticType."))
+                            {
+                                foreach (StatisticType t in Enum.GetValues(typeof(StatisticType)))
+                                {
+                                    if (value.ToUpper().EndsWith("." + t.ToString().ToUpper()))
+                                    {
+                                        try
+                                        {
+                                            StatAdd(ref statstopull, new StatisticsClassWrapper(cat, statname, t, divisor, multiplier, divisorsuffix, precision), onlyenabled);
+                                        }
+                                        catch (Exception ex)
+                                        {
+                                            statlog.log("cat: " + cat + " stat:" + statname + " error:" + ex.Message);
+                                        }
+
+                                        break;
+                                    }
+
+                                }
+                            }
+                            else if (value.StartsWith("ImmaterialResourceManager.Resource."))
+                            {
+                                
+                                foreach (ImmaterialResourceManager.Resource t in Enum.GetValues(typeof(ImmaterialResourceManager.Resource)))
+                                {
+                                    if (value.ToUpper().EndsWith("." + t.ToString().ToUpper()))
+                                    {
+                                        try
+                                        {
+                                            StatAdd(ref statstopull, new StatisticsClassWrapper(cat, statname, t, divisor, multiplier, divisorsuffix, precision), onlyenabled);
+                                        }
+                                        catch (Exception ex)
+                                        {
+                                            statlog.log("cat: " + cat + " stat:" + statname + " error:" + ex.Message);
+                                        }
+
+                                        break;
+                                    }
+
+                                }
+                            }
+                        }
+                    }
+
+                    if (!string.IsNullOrEmpty(vehiclesummarycapacitystat))
+                    {
+                        double used1=0, used2=0, cap1=0, cap2=0;
+                        if (DataHelper.isnumeric(summarycapacitystat)) cap1 = double.Parse(summarycapacitystat);
+                        if (DataHelper.isnumeric(summaryusedstat)) used1 = double.Parse(summaryusedstat);
+                        if (DataHelper.isnumeric(vehiclesummarycapacitystat)) cap2 = double.Parse(vehiclesummarycapacitystat);
+                        if (DataHelper.isnumeric(vehiclesummaryusedstat)) used2 = double.Parse(vehiclesummaryusedstat);
+                        
+                        foreach (StatisticsClassWrapper scw in statstopull)
+                        {
+                            if (scw.m_desc.ToLower().Trim() == summaryusedstat.ToLower().Trim()) used1 = scw.m_finalvalue;
+                            if (scw.m_desc.ToLower().Trim() == summarycapacitystat.ToLower().Trim()) cap1 = scw.m_finalvalue;
+                            if (scw.m_desc.ToLower().Trim() == vehiclesummaryusedstat.ToLower().Trim()) used2 = scw.m_finalvalue;
+                            if (scw.m_desc.ToLower().Trim() == vehiclesummarycapacitystat.ToLower().Trim()) cap2 = scw.m_finalvalue;
+                        }
+                        if (cap1 > 0 && cap2 > 0)
+                        {
+                            double d1 = (double)used1 / (double)cap1;
+                            double d2 = (double)used2 / (double)cap2;
+                            if (d2 > d1
+                                && CSLStatsPanelConfigSettings.m_UseVechileStatsForSummaries.value)
+                            {
+                                summaryusedstat = vehiclesummaryusedstat;
+                                summarycapacitystat = vehiclesummarycapacitystat;
+                                showstatssummary = true;
+                            }
+
+                        }
+                    }
+                    else if (!string.IsNullOrEmpty(summarykeystat))
+                    {
+                        summaryusedstat = summarykeystat;
+                        summarycapacitystat = "";
+                        
+                    }
+                    catstopull.Add(new StatisticsCategoryWrapper(cat, statstopull, summaryusedstat, summarycapacitystat, icon, showstatssummary));
+                    if (XMLHelper.safeAttributes(catnode, "summarystattargetred") != "")
+                        catstopull.Last().m_targetred = float.Parse(XMLHelper.safeAttributes(catnode, "summarystattargetred"));
+                    if (XMLHelper.safeAttributes(catnode, "summarystattargetyellow") != "")
+                        catstopull.Last().m_targetyellow = float.Parse(XMLHelper.safeAttributes(catnode, "summarystattargetyellow"));
+
+                    statstopull = new List<StatisticsClassWrapper>();
+                }
+            }
+            return catstopull;
+        }
+
         public static List<StatisticsCategoryWrapper> getstats3(bool onlyenabled = true)
         {
+            
+            return getstats3(onlyenabled, ThreadingCSLStatsMod.defaultXMLConfig);
+            /*
+             * old stat configuration below
+             */
+
             onlyenabled = false;
             List<StatisticsCategoryWrapper> catstopull = new List<StatisticsCategoryWrapper>();
             List<StatisticsClassWrapper> statstopull = new List<StatisticsClassWrapper>();
@@ -797,6 +1225,8 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                 StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Exports Train", vs.trainexports, 2, "K", 1000, false), onlyenabled);
                 StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Imports Ship", vs.shipimports, 2, "K", 1000, false), onlyenabled);
                 StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Exports Ship", vs.shipexports, 2, "K", 1000, false), onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Imports Tram", vs.tramimports, 2, "K", 1000, false), onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Exports Tram", vs.tramexports, 2, "K", 1000, false), onlyenabled);
                 //StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Imports Plane", vs.planeimports, 2, "K", 1000), onlyenabled);
                 //StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Exports Plane", vs.planeexports, 2, "K", 1000), onlyenabled);
                 //StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Ind Imports", vs.industryimports, 2, "K", 1000, false), onlyenabled);
@@ -915,6 +1345,7 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                 StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Avg Passengers", StatisticType.AveragePassengers, 1, 1, ""), onlyenabled);
                 StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Busses", vs.passengerbusses), onlyenabled);
                 StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Metro", vs.passengermetro), onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Tram", vs.passengertram), onlyenabled);
                 //StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Trains", vs.passengertrains), onlyenabled);
                 //StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Ships", vs.passengerships), onlyenabled);
                 //StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Planes", vs.passengerplanes), onlyenabled);

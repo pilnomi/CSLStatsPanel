@@ -9,4 +9,7 @@
     <StartWorkingDirectory>C:\Program Files (x86)\Steam\steamapps\common\Cities_Skylines\</StartWorkingDirectory>
     <StartURL>steam://rungameid/255710</StartURL>
   </PropertyGroup>
+  <PropertyGroup>
+    <ReferencePath>H:\SteamLibrary\steamapps\common\Cities_Skylines\Cities_Data\Managed\</ReferencePath>
+  </PropertyGroup>
 </Project>
