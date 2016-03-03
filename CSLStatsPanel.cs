@@ -151,6 +151,8 @@ namespace CSLStatsPanel
                         CSLStatsPanelConfigSettings.TransparentPanelColor = parseColor(color);
 
                     color = XMLHelper.safeAttributes(n[0], "defaultPanelColor_NormalStatus");
+                    statlog.log(color + " " + color.Split(',').Length.ToString());
+
                     if (color.Split(',').Length == 4)
                         CSLStatsPanelConfigSettings.DefaultPanelColor_NormalStatus = parseColor(color);
                     color = XMLHelper.safeAttributes(n[0], "defaultPanelColor_WarningStatus");
@@ -166,10 +168,10 @@ namespace CSLStatsPanel
         UnityEngine.Color32 parseColor(string color)
         {
             byte r = 0, g = 0, b = 0, a = 255;
-            byte.TryParse(color.Split(',')[0], out r);
-            byte.TryParse(color.Split(',')[1], out g);
-            byte.TryParse(color.Split(',')[2], out b);
-            byte.TryParse(color.Split(',')[3], out a);
+            byte.TryParse(color.Split(',')[0].Trim(), out r);
+            byte.TryParse(color.Split(',')[1].Trim(), out g);
+            byte.TryParse(color.Split(',')[2].Trim(), out b);
+            byte.TryParse(color.Split(',')[3].Trim(), out a);
             return new UnityEngine.Color32(r, g, b, a);
         }
 
@@ -299,7 +301,7 @@ namespace CSLStatsPanel
     
     public static class statlog
         {
-            public static bool enablelogging = false, enablelogtofile = true, enablelogtoscreen = false;
+            public static bool enablelogging = true, enablelogtofile = true, enablelogtoscreen = false;
             public static void log(string logtext)
             {
                 if (!enablelogging) return;

@@ -5,6 +5,8 @@
 Warning: while this file exists, it overrides any updates that might come in thru workshop.  
 Click "Reset Config" to remove this file and revert back to all stats
 
+don't forget to close this file or steam will think the game is still running!
+
 categories / stats may be reordered and/or remarked out
 new stats can be added if the referenced field actually exists (reflection is used in most cases - these are not hard-wired)
 
@@ -27,11 +29,11 @@ vehicle summary numbers (when used) will always show on the summary line when th
   
 -->
   </CONFIGCOMMENTS>
-  <CONFIGVERSION value="20160225a"></CONFIGVERSION>
+  <CONFIGVERSION value="20160226a"></CONFIGVERSION>
   <CONFIGSETTINGS>
     <LOGGING enabled="true" tofile="true" tof7screen="false" />
     <COLORS 
-      defaultPanelColor="0, 0, 255, 255"
+      defaultPanelColor="0, 0, 255, 200"
       transparentPanelColor="0, 0, 0, 0"
       defaultPanelColor_NormalStatus="0, 255, 0, 255"
       defaultPanelColor_WarningStatus="255, 255, 0, 255"
@@ -118,8 +120,8 @@ vehicle summary numbers (when used) will always show on the summary line when th
 
     <STAT name="Density" value="ImmaterialResourceManager.Resource.Density" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
     <STAT name="Land Value" value="ImmaterialResourceManager.Resource.LandValue" divisor="1" divisorsuffix="₡/m²" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="true" />
-    <STAT name="ImmaterialResource" value="ImmaterialResourceManager.Resource.ImmaterialResource" divisor="1000" divisorsuffix="M" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
-    <STAT name="Goods Produced" value="ImmaterialResourceManager.Resource.GoodsProduced" divisor="1000" divisorsuffix="K" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="ImmaterialResource" value="StatisticType.ImmaterialResource" divisor="1000" divisorsuffix="M" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Goods Produced" value="StatisticType.GoodsProduced" divisor="1000" divisorsuffix="K" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
   </CATEGORY>
 
   <CATEGORY name="Trade" active="true" icon="InfoIconOutsideConnections" showstatsummary="false" summaryusedstat="" summarycapacitystat="">

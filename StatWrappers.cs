@@ -334,6 +334,7 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                 educationData.Add(dm.m_districts.m_buffer[i].m_educated1Data);
                 educationData.Add(dm.m_districts.m_buffer[i].m_educated2Data);
                 educationData.Add(dm.m_districts.m_buffer[i].m_educated3Data);
+                
             }
 
         }
@@ -957,6 +958,8 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                                 
                                 foreach (ImmaterialResourceManager.Resource t in Enum.GetValues(typeof(ImmaterialResourceManager.Resource)))
                                 {
+                                    
+                                    //statlog.log(value + " " + t.ToString());
                                     if (value.ToUpper().EndsWith("." + t.ToString().ToUpper()))
                                     {
                                         try
