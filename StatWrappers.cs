@@ -228,7 +228,7 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
         public int onfire = 0, buildingcount = 0,
             garbagetrucks = 0, firetrucks = 0, hearse = 0, policecars = 0, healthcarevehicles = 0,
             workplacecount0, workplacecount1, workplacecount2, workplacecount3,
-            maintenancetrucks = 0, snowtrucks=0;
+            maintenancetrucks = 0, snowtrucks = 0, depottrucks=0;
         public buildingStats()
         {
             BuildingManager bm = Singleton<BuildingManager>.instance;
@@ -274,6 +274,8 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                         maintenancetrucks += (productionRate * ((MaintenanceDepotAI)bi).m_maintenanceTruckCount + 99) / 100;
                 else if (t==typeof(SnowDumpAI))
                         snowtrucks += (productionRate * ((SnowDumpAI)bi).m_snowTruckCount + 99) / 100;
+                else if (t == typeof(DepotAI))
+                        depottrucks += (productionRate * ((DepotAI)bi).m_maxVehicleCount + 99) / 100;
                 if (bm.m_buildings.m_buffer[i].m_fireIntensity > 0) onfire++;
             }
 
@@ -398,7 +400,7 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                 bool buildingisvalid = checkbuilding(b, myv.m_sourceBuilding);
                 bool sourcebuildingisplayer = (bm.m_buildings.m_buffer[myv.m_sourceBuilding].m_flags.IsFlagSet(Building.Flags.Untouchable)) ? false : true;
                 bool targetbuildingisplayer = (bm.m_buildings.m_buffer[myv.m_targetBuilding].m_flags.IsFlagSet(Building.Flags.Untouchable)) ? false : true;
-                uint transfersize = myv.m_transferSize;
+                uint transfersize = myv.m_transferSize; 
                 TransferManager.TransferReason transfertype = (TransferManager.TransferReason)myv.m_transferType;
                 
                 switch (myv.Info.m_class.m_service)
@@ -678,7 +680,7 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
             }
             else if (stringtoanalyze.EndsWith(".totalgarbagecapacity"))
             {
-                decimal customGarbageCapacity = (decimal)MasterStatsWrapper.GetStat(StatisticType.GarbageCapacity) + (decimal)MasterStatsWrapper.GetStat(StatisticType.IncinerationCapacity);
+                decimal customGarbageCapacity = (decimal)MasterStatsWrapper.GetStat(StatisticType.GarbageCapacity) + ((decimal)MasterStatsWrapper.GetStat(StatisticType.IncinerationCapacity)*16);
                 return customGarbageCapacity.ToString();
 
             }
@@ -886,7 +888,8 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                                 if (DataHelper.isnumeric(valuestring))
                                 {
                                     decimal valueliteral = decimal.Parse(valuestring);
-                                    StatAdd(ref statstopull, new StatisticsClassWrapper(cat, statname, double.Parse((valueliteral / divisor).ToString()), precision, divisorsuffix, multiplier, alwaysaddsuffix), onlyenabled);
+                                    if (valueliteral > divisor) valueliteral = valueliteral / divisor;
+                                    StatAdd(ref statstopull, new StatisticsClassWrapper(cat, statname, double.Parse((valueliteral ).ToString()), precision, divisorsuffix, multiplier, alwaysaddsuffix), onlyenabled);
                                 }
                                 else
                                 {
@@ -926,7 +929,8 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                                         break;
                                     }
                                 }
-                                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, statname, double.Parse((valueliteral / divisor).ToString()), precision, divisorsuffix, multiplier, alwaysaddsuffix), onlyenabled);
+                                if (valueliteral > divisor) valueliteral = valueliteral / divisor;
+                                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, statname, double.Parse((valueliteral ).ToString()), precision, divisorsuffix, multiplier, alwaysaddsuffix), onlyenabled);
                                 }
                                 catch (Exception ex)
                                 {

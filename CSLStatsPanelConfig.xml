@@ -22,14 +22,14 @@ evaluate the related vehicle numbers to see which is higher, and that stat is us
 
 showstatssummary ="false" typically used to hide a more complicated expression 
 example: health summary targets 80% health (not 100), so at 80% the number would show 100% (to target) which is confusing
-also showing "Health -80" on the category description line is redundant because the 1st stat of the category is Health and needs to be there
+also showing "Health 80%" on the category description line is redundant because the 1st stat of the category is Health and needs to be there
 
 vehicle summary numbers (when used) will always show on the summary line when they are higher even if showstatssummary="false"
 
   
 -->
   </CONFIGCOMMENTS>
-  <CONFIGVERSION value="20160226a"></CONFIGVERSION>
+  <CONFIGVERSION value="20160803a"></CONFIGVERSION>
   <CONFIGSETTINGS>
     <LOGGING enabled="true" tofile="true" tof7screen="false" />
     <COLORS 
@@ -213,6 +213,7 @@ vehicle summary numbers (when used) will always show on the summary line when th
     <STAT name="Maint Trucks Total" value="BuildingStats.maintenancetrucks" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
     <STAT name="Snow Trucks Used" value="VehicleStats.snowtrucksinuse" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
     <STAT name="Snow Trucks Total" value="BuildingStats.snowtrucks" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <STAT name="Depot Vehicles Total" value="BuildingStats.depottrucks" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
   
   </CATEGORY>
 </root>
