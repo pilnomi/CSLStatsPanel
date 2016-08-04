@@ -872,6 +872,8 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                         for (int c = 0; c < catnode.ChildNodes.Count; c++ )
                         {
                             System.Xml.XmlNode statnode = catnode.ChildNodes[c];
+                            if (statnode.Name.ToUpper().Trim() != "STAT") continue;
+                             
                             string statname = XMLHelper.safeAttributes(statnode, "name");
                             string value = XMLHelper.safeAttributes(statnode, "value");
                             decimal divisor = decimal.Parse(XMLHelper.safeAttributes(statnode, "divisor"));

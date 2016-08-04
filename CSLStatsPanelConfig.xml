@@ -1,30 +1,36 @@
 ﻿<root>
   <CONFIGCOMMENTS>
 <!--
-2016-02-25 Operation40 *******************************************
 Warning: while this file exists, it overrides any updates that might come in thru workshop.  
 Click "Reset Config" to remove this file and revert back to all stats
 
-don't forget to close this file or steam will think the game is still running!
+Warning #2: don't forget to close this file or steam will think the game is still running!
 
-categories / stats may be reordered and/or remarked out
-new stats can be added if the referenced field actually exists (reflection is used in most cases - these are not hard-wired)
+******************************************* 2016-08-03 Operation40 
+· this file hates comments, which is why this comment is in it's own XML element, <CONFIGCOMMENTS>
+  To remove a STAT, you can delete it, or rename the element to something else like "DEL_STAT" .. Same goes for CATEGORY tags.
 
-active/deactive flags are also stored in the game settings file where they are actually updated
+· seems to be some bloat in here / unnecessary attributes
 
-active="false" here is experimental, leave it to true for now, disable categories in the UI in the game
+******************************************* 2016-02-25 Operation40 
+· categories / stats may be reordered and/or remarked out
+· new stats can be added if the referenced field actually exists (reflection is used in most cases - these are not hard-wired)
 
-keystat="true" will display that stat as the category summary, EXCEPT when vehiclesummary was specified
-this is not useful at the moment since it wipes out the summary calculation on the category
+· active/deactive flags are also stored in the game settings file where they are actually updated
 
-vehiclesummaryusedstat and vehiclesummarycapacitystat 
-evaluate the related vehicle numbers to see which is higher, and that stat is used as the summary.
+· active="false" here is experimental, leave it to true for now, disable categories in the UI in the game
 
-showstatssummary ="false" typically used to hide a more complicated expression 
-example: health summary targets 80% health (not 100), so at 80% the number would show 100% (to target) which is confusing
-also showing "Health 80%" on the category description line is redundant because the 1st stat of the category is Health and needs to be there
+· keystat="true" will display that stat as the category summary, EXCEPT when vehiclesummary was specified
+  this is not useful at the moment since it wipes out the summary calculation on the category
 
-vehicle summary numbers (when used) will always show on the summary line when they are higher even if showstatssummary="false"
+· vehiclesummaryusedstat and vehiclesummarycapacitystat 
+  evaluate the related vehicle numbers to see which is higher, and that stat is used as the summary.
+
+· showstatssummary ="false" typically used to hide a more complicated expression 
+  example: health summary targets 80% health (not 100), so at 80% the number would show 100% (to target) which is confusing
+  also showing "Health 80%" on the category description line is redundant because the 1st stat of the category is Health and needs to be there
+
+· vehicle summary numbers (when used) will always show on the summary line when they are higher even if showstatssummary="false"
 
   
 -->
@@ -136,9 +142,10 @@ vehicle summary numbers (when used) will always show on the summary line when th
     <STAT name="Exports Train" value="VehicleStats.trainexports" divisor="1000" divisorsuffix="K" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
     <STAT name="Imports Ship" value="VehicleStats.shipimports" divisor="1000" divisorsuffix="K" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
     <STAT name="Exports Ship" value="VehicleStats.shipexports" divisor="1000" divisorsuffix="K" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
-    <STAT name="Imports Tram" value="VehicleStats.tramimports" divisor="1000" divisorsuffix="K" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
-    <STAT name="Exports Tram" value="VehicleStats.tramexports" divisor="1000" divisorsuffix="K" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
-
+  
+    <DEL_STAT name="Imports Tram" value="VehicleStats.tramimports" divisor="1000" divisorsuffix="K" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <DEL_STAT name="Exports Tram" value="VehicleStats.tramexports" divisor="1000" divisorsuffix="K" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+  
   </CATEGORY>
 
   <CATEGORY name="Citizens" active="true" icon="InfoIconPopulation" showstatsummary="false" summaryusedstat="Death Rate" summarycapacitystat="Birth Rate">
@@ -211,8 +218,8 @@ vehicle summary numbers (when used) will always show on the summary line when th
   <CATEGORY name="Government" active="true" icon="InfoIconTrafficCongestionPressed" showstatsummary="false" summaryusedstat="" summarycapacitystat="">
     <STAT name="Maint Trucks Used" value="VehicleStats.maintenancetrucksinuse" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
     <STAT name="Maint Trucks Total" value="BuildingStats.maintenancetrucks" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
-    <STAT name="Snow Trucks Used" value="VehicleStats.snowtrucksinuse" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
-    <STAT name="Snow Trucks Total" value="BuildingStats.snowtrucks" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <DEL_STAT name="Snow Trucks Used" value="VehicleStats.snowtrucksinuse" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <DEL_STAT name="Snow Trucks Total" value="BuildingStats.snowtrucks" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
     <STAT name="Depot Vehicles Total" value="BuildingStats.depottrucks" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
   
   </CATEGORY>
