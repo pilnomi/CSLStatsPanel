@@ -228,7 +228,7 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
         public int onfire = 0, buildingcount = 0,
             garbagetrucks = 0, firetrucks = 0, hearse = 0, policecars = 0, healthcarevehicles = 0,
             workplacecount0, workplacecount1, workplacecount2, workplacecount3,
-            maintenancetrucks = 0, snowtrucks = 0, depottrucks=0;
+            maintenancetrucks = 0, snowtrucks = 0, depottrucks=0, taxis=0;
         public buildingStats()
         {
             BuildingManager bm = Singleton<BuildingManager>.instance;
@@ -276,6 +276,8 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                         snowtrucks += (productionRate * ((SnowDumpAI)bi).m_snowTruckCount + 99) / 100;
                 else if (t == typeof(DepotAI))
                         depottrucks += (productionRate * ((DepotAI)bi).m_maxVehicleCount + 99) / 100;
+                else if (t== typeof(TaxiStandAI))
+                        taxis += (productionRate * ((TaxiStandAI)bi).m_maxVehicleCount + 99) / 100;
                 if (bm.m_buildings.m_buffer[i].m_fireIntensity > 0) onfire++;
             }
 
@@ -346,7 +348,7 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
     {
         public double activevehicles = 0,
             garbagetrucksinuse = 0, firetrucksinuse = 0, hearseinuse = 0, policecarsinuse = 0, healthcarevehiclesinuse = 0,
-            maintenancetrucksinuse = 0, snowtrucksinuse=0,
+            maintenancetrucksinuse = 0, snowtrucksinuse=0, taxisinuse=0,
             passengerbusses = 0, passengerships = 0, passengertrains = 0, passengerplanes = 0, passengermetro = 0, passengertram = 0,
             cargocars = 0, cargobusses = 0, cargoships = 0, cargotrains = 0, cargoplanes = 0, cargometro = 0, cargotrams = 0,
             commercialcars = 0, commercialbusses = 0, commercialships = 0, commercialtrains = 0, commercialplanes = 0, commercialmetro = 0, commercialtrams = 0,
@@ -411,6 +413,8 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                             maintenancetrucksinuse++;
                         if (myv.Info.m_vehicleAI.GetType() == typeof(SnowTruckAI))
                             snowtrucksinuse++;
+                        if (myv.Info.m_vehicleAI.GetType() == typeof(TaxiAI))
+                            taxisinuse++;
                         break;
                     case ItemClass.Service.Garbage:
                         if (buildingisvalid) garbagetrucksinuse++;
