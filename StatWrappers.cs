@@ -306,7 +306,7 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                 //if (!dm.m_districts.m_buffer[i].m_flags.IsFlagSet(District.Flags.Created)) continue;
                 //if (dm.m_districts.m_buffer[i].m_flags.IsFlagSet(District.Flags.CustomName)) continue;
                 //citizencount += (int)dm.m_districts.m_buffer[i].m_populationData.m_finalCount;
-
+                
                 int localcitizencount = (int)(dm.m_districts.m_buffer[i].m_adultData.m_finalCount
                     + dm.m_districts.m_buffer[i].m_childData.m_finalCount
                     + dm.m_districts.m_buffer[i].m_youngData.m_finalCount

@@ -294,6 +294,25 @@ namespace CSLStatsPanel
             pOptions.autoSize = true;
             pOptions.FitChildrenVertically();
 
+            if (ThreadingCSLStatsMod.xmlconfigerror)
+            {
+                UIPanel pConfigError = this.AddUIComponent<UIPanel>();
+                //catpanels.Add(pWarning);
+
+                pConfigError.autoLayout = true;
+                pConfigError.wrapLayout = true;
+                pConfigError.autoLayoutDirection = LayoutDirection.Horizontal;
+                pConfigError.width = this.width - 5;
+
+                pConfigError.autoLayoutPadding = new RectOffset(3, 3, 3, 3);
+                UILabel customXmlConfigVersionWarning = pConfigError.AddUIComponent<UILabel>();
+                customXmlConfigVersionWarning.text = ""
+                    + "Error: Unable to load your custom configuration file.  Please check the file for errors, or Reset Config to defaults.";
+                customXmlConfigVersionWarning.textColor = customizeXMLConfig.focusedTextColor;
+                pConfigError.autoSize = true;
+                pConfigError.FitChildrenVertically();
+            }
+
             if (ThreadingCSLStatsMod.loadedXMLConfigVersion != ThreadingCSLStatsMod.defaultXMLConfigVersion)
             {
                 UIPanel pWarning = this.AddUIComponent<UIPanel>();

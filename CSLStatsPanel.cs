@@ -175,8 +175,10 @@ namespace CSLStatsPanel
             return new UnityEngine.Color32(r, g, b, a);
         }
 
+        public static bool xmlconfigerror = false;
         public void loadConfigFile()
         {
+            xmlconfigerror = false;
             try
             {
                 defaultXMLConfig = GetResourceTextFile("CSLStatsPanelConfig.xml");
@@ -186,7 +188,19 @@ namespace CSLStatsPanel
                 if (System.IO.File.Exists(mydocs + "\\CSLStatsPanel\\CSLStatsPanelConfig.xml"))
                 {
                     defaultXMLConfig = System.IO.File.ReadAllText(mydocs + "\\CSLStatsPanel\\CSLStatsPanelConfig.xml");
+                    
+                    try
+                    {
+                        System.Xml.XmlDocument xdoc = new System.Xml.XmlDocument();
+                        xdoc.LoadXml(defaultXMLConfig);
+                    }
+                    catch
+                    {
+                        xmlconfigerror = true;
+                        defaultXMLConfig = GetResourceTextFile("CSLStatsPanelConfig.xml");
+                    }
                     loadedXMLConfigVersion = getXMLConfigVersion(defaultXMLConfig);
+
                 }
                 else loadedXMLConfigVersion = defaultXMLConfigVersion;
 
