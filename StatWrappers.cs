@@ -142,15 +142,16 @@ namespace CSLStatsPanel
             this.category = category;
             statstring = description;
         }
-        public StatisticsClassWrapper(string category, string description, double value, int precision = 2, string suffix = "", decimal scale = 1, bool alwaysaddsuffix = true)
+        public StatisticsClassWrapper(string category, string description, double value, int precision = 2, string suffix = "", decimal divisor = 1, decimal multiplier = 1, bool alwaysaddsuffix = true)
         {
             bool showsuffix = alwaysaddsuffix;
             this.category = category;
             m_desc = description;
+            value = value * (double)multiplier;
             m_value = (float)value;
-            if (value > (float)scale)
+            if (value > (float)divisor || alwaysaddsuffix)
             {
-                value /= (float)scale;
+                value = value / (float)divisor;
                 m_scaledesc = suffix;
                 showsuffix = true;
             }
@@ -172,7 +173,7 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                 total = outint;
                 m_value = total;
                 string strtotal = total.ToString();
-                if (total > (float)scale)
+                if (total > (float)scale )
                 {
                     total /= (float)scale;
                     strtotal = Math.Round(total, precision).ToString() + scalestring;
@@ -894,8 +895,8 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                                 if (DataHelper.isnumeric(valuestring))
                                 {
                                     decimal valueliteral = decimal.Parse(valuestring);
-                                    if (valueliteral > divisor || alwaysaddsuffix) valueliteral = valueliteral / divisor;
-                                    StatAdd(ref statstopull, new StatisticsClassWrapper(cat, statname, double.Parse((valueliteral ).ToString()), precision, divisorsuffix, multiplier, alwaysaddsuffix), onlyenabled);
+                                    //if (valueliteral > divisor || alwaysaddsuffix) valueliteral = valueliteral / divisor;
+                                    StatAdd(ref statstopull, new StatisticsClassWrapper(cat, statname, double.Parse((valueliteral ).ToString()), precision, divisorsuffix, divisor, multiplier, alwaysaddsuffix), onlyenabled);
                                 }
                                 else
                                 {
@@ -935,8 +936,8 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                                         break;
                                     }
                                 }
-                                if (valueliteral > divisor || alwaysaddsuffix) valueliteral = valueliteral / divisor;
-                                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, statname, double.Parse((valueliteral ).ToString()), precision, divisorsuffix, multiplier, alwaysaddsuffix), onlyenabled);
+                                //if (valueliteral > divisor || alwaysaddsuffix) valueliteral = valueliteral / divisor;
+                                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, statname, double.Parse((valueliteral).ToString()), precision, divisorsuffix, divisor, multiplier, alwaysaddsuffix), onlyenabled);
                                 }
                                 catch (Exception ex)
                                 {
@@ -1227,19 +1228,19 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
             cat = "Trade";
             if (CSLStatsPanelConfigSettings.isCatActive(cat) || !onlyenabled)
             {
-                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Imports", vs.cargoimports, 2, "K", 1000, false), onlyenabled);
-                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Exports", vs.cargoexports, 2, "K", 1000, false), onlyenabled);
-                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Intracity", vs.intracitytransports, 2, "K", 1000, false), onlyenabled);
-                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Imports Car", vs.carimports, 2, "K", 1000, false), onlyenabled);
-                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Exports Car", vs.carexports, 2, "K", 1000, false), onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Imports", vs.cargoimports, 2, "K", 1000, 1, false), onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Exports", vs.cargoexports, 2, "K", 1000, 1, false), onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Intracity", vs.intracitytransports, 2, "K", 1000, 1, false), onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Imports Car", vs.carimports, 2, "K", 1000, 1, false), onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Exports Car", vs.carexports, 2, "K", 1000, 1, false), onlyenabled);
                 //StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Imports Metro", vs.metroimports, 2, "K", 1000), onlyenabled);
                 //StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Exports Metro", vs.metroexports, 2, "K", 1000), onlyenabled);
-                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Imports Train", vs.trainimports, 2, "K", 1000, false), onlyenabled);
-                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Exports Train", vs.trainexports, 2, "K", 1000, false), onlyenabled);
-                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Imports Ship", vs.shipimports, 2, "K", 1000, false), onlyenabled);
-                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Exports Ship", vs.shipexports, 2, "K", 1000, false), onlyenabled);
-                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Imports Tram", vs.tramimports, 2, "K", 1000, false), onlyenabled);
-                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Exports Tram", vs.tramexports, 2, "K", 1000, false), onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Imports Train", vs.trainimports, 2, "K", 1000, 1, false), onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Exports Train", vs.trainexports, 2, "K", 1000, 1, false), onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Imports Ship", vs.shipimports, 2, "K", 1000, 1, false), onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Exports Ship", vs.shipexports, 2, "K", 1000, 1, false), onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Imports Tram", vs.tramimports, 2, "K", 1000, 1, false), onlyenabled);
+                StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Exports Tram", vs.tramexports, 2, "K", 1000, 1, false), onlyenabled);
                 //StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Imports Plane", vs.planeimports, 2, "K", 1000), onlyenabled);
                 //StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Exports Plane", vs.planeexports, 2, "K", 1000), onlyenabled);
                 //StatAdd(ref statstopull, new StatisticsClassWrapper(cat, "Ind Imports", vs.industryimports, 2, "K", 1000, false), onlyenabled);
