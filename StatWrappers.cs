@@ -894,7 +894,7 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                                 if (DataHelper.isnumeric(valuestring))
                                 {
                                     decimal valueliteral = decimal.Parse(valuestring);
-                                    if (valueliteral > divisor) valueliteral = valueliteral / divisor;
+                                    if (valueliteral > divisor || alwaysaddsuffix) valueliteral = valueliteral / divisor;
                                     StatAdd(ref statstopull, new StatisticsClassWrapper(cat, statname, double.Parse((valueliteral ).ToString()), precision, divisorsuffix, multiplier, alwaysaddsuffix), onlyenabled);
                                 }
                                 else
@@ -935,7 +935,7 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                                         break;
                                     }
                                 }
-                                if (valueliteral > divisor) valueliteral = valueliteral / divisor;
+                                if (valueliteral > divisor || alwaysaddsuffix) valueliteral = valueliteral / divisor;
                                 StatAdd(ref statstopull, new StatisticsClassWrapper(cat, statname, double.Parse((valueliteral ).ToString()), precision, divisorsuffix, multiplier, alwaysaddsuffix), onlyenabled);
                                 }
                                 catch (Exception ex)
