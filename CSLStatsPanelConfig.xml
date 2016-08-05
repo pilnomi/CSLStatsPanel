@@ -37,7 +37,7 @@ Warning #2: don't forget to close this file or steam will think the game is stil
   </CONFIGCOMMENTS>
   <CONFIGVERSION value="20160803a"></CONFIGVERSION>
   <CONFIGSETTINGS>
-    <LOGGING enabled="true" tofile="true" tof7screen="false" />
+    <LOGGING enabled="false" tofile="false" tof7screen="false" />
     <COLORS 
       defaultPanelColor="0, 0, 255, 200"
       transparentPanelColor="0, 0, 0, 0"
