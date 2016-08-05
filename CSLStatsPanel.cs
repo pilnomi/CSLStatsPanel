@@ -51,7 +51,10 @@ namespace CSLStatsPanel
 
         public override void OnLevelUnloading()
         {
-            if (ThreadingCSLStatsMod.instance != null) ThreadingCSLStatsMod.instance.refreshtimer.Stop();
+            if (ThreadingCSLStatsMod.instance != null)
+            {
+                ThreadingCSLStatsMod.instance.refreshtimer.Stop();
+            }
             StatusWindowInterface.destroy();
             base.OnLevelUnloading();
         }

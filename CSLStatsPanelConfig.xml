@@ -221,8 +221,8 @@ Warning #2: don't forget to close this file or steam will think the game is stil
     <STAT name="Snow Trucks Used" value="VehicleStats.snowtrucksinuse" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
     <DEL_STAT name="Snow Trucks Total" value="BuildingStats.snowtrucks" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
     <DEL_STAT name="Depot Vehicles Total" value="BuildingStats.depottrucks" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
-    <STAT name="Taxis Used" value="VehicleStats.taxisused" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
-    <STAT name="Taxis Total" value="BuildingStats.taxis" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <DEL_STAT name="Taxis Used" value="VehicleStats.taxisused" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
+    <DEL_STAT name="Taxis Total" value="BuildingStats.taxis" divisor="1" divisorsuffix="" multiplier="1" precision="2" keystat="false" alwaysaddsuffix="false" />
   
   </CATEGORY>
 </root>

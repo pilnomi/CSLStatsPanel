@@ -39,7 +39,7 @@ namespace CSLStatsPanel
             headerpanel.color = new Color32(0, 0, 100, 200);
 
             headertext = headerpanel.AddUIComponent<UILabel>();
-            headertext.text = "CSL Stats Panel - Configuration";
+            headertext.text = "CSL Stats Panel - Configuration, v" + System.Reflection.Assembly.GetAssembly(typeof(CSLStatsPanelMod)).GetName().Version;;
             headertext.CenterToParent();
 
             myConfigWindowPanel = (ConfigSettingsWindow)this.AddUIComponent(typeof(ConfigSettingsWindow));

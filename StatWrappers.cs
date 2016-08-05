@@ -405,7 +405,10 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                 bool targetbuildingisplayer = (bm.m_buildings.m_buffer[myv.m_targetBuilding].m_flags.IsFlagSet(Building.Flags.Untouchable)) ? false : true;
                 uint transfersize = myv.m_transferSize; 
                 TransferManager.TransferReason transfertype = (TransferManager.TransferReason)myv.m_transferType;
-                
+
+                if (myv.Info.m_vehicleAI.GetType() == typeof(TaxiAI))
+                    taxisinuse++;
+
                 switch (myv.Info.m_class.m_service)
                 {
                     case ItemClass.Service.Government:
@@ -414,8 +417,6 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                             maintenancetrucksinuse++;
                         if (myv.Info.m_vehicleAI.GetType() == typeof(SnowTruckAI))
                             snowtrucksinuse++;
-                        if (myv.Info.m_vehicleAI.GetType() == typeof(TaxiAI))
-                            taxisinuse++;
                         break;
                     case ItemClass.Service.Garbage:
                         if (buildingisvalid) garbagetrucksinuse++;
@@ -1593,7 +1594,6 @@ decimal multiplier = 16, decimal scale = 1000, string scalestring = "M", int pre
                 return policyexpense;
             }
         }
-
     }
 
 }
